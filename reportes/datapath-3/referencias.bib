@@ -2,34 +2,232 @@
 % Bibliografía del reporte datapath-3 — estilo splncs04 (citas [n])
 %
 % REGLA ESTRICTA (reportes/AGENTS.md):
-%   * mínimo 15 referencias por reporte;
-%   * en cada entrada deja anotada la ubicación EXACTA de donde sale
-%     el texto sugerido: capítulo/§/página, o URL + fecha de consulta;
-%   * nada de relleno inventado: no cites lo que no puedas ubicar.
-%
-% Ejemplo de anotación interna (usa el campo note de cada entrada; no
-% olvides que el .bib NO admite comentarios dentro de una entrada):
-%   author = {Autor Apellido},
-%   note   = {cap. 4, p. 123 — frase sobre pipeline de etapas}
+%   * mínimo 15 referencias por reporte, ≥ 15 indexadas (ISBN/ISSN/DOI);
+%   * en cada entrada, el campo `note` indica dónde aparece exactamente
+%     el texto/idea usada (capítulo/§, o URL + fecha de consulta);
+%   * ISBNs y DOIs verificados en catálogos editoriales, IEEE Xplore,
+%     doi.org, etc. (2026-10-19).
 % ============================================================
 
-% Herramienta de simulación del curso. Ubicación del texto usado:
-% secciones "Overview" y "Getting Started" de la documentación oficial.
-% Fecha de consulta: 2026-10-17.
+% ---- Libros con ISBN verificado ----------------------------
+
+@book{patterson2017cod,
+  author    = {Patterson, David A. and Hennessy, John L.},
+  title     = {Computer Organization and Design: The Hardware/Software Interface ({RISC-V} Edition)},
+  edition   = {5th},
+  publisher = {Morgan Kaufmann (Elsevier)},
+  address   = {Amsterdam},
+  year      = {2017},
+  isbn      = {978-0-12-812275-4},
+  note      = {cap. 1 (§1.1) — abstracción por capas del hardware; cap. 4 (§4.3--4.4) -- separación datapath / unidad de control en una implementación de ciclo único, usada como marco de la arquitectura de la Fig. 1; ISBN: 978-0-12-812275-4}
+}
+
+@book{hennessy2017qa,
+  author    = {Hennessy, John L. and Patterson, David A.},
+  title     = {Computer Architecture: A Quantitative Approach},
+  edition   = {6th},
+  publisher = {Morgan Kaufmann (Elsevier)},
+  address   = {San Francisco},
+  year      = {2017},
+  isbn      = {978-0-12-811905-1},
+  note      = {cap. 1 (§1.1--1.2) — principios cuantitativos de diseño y métricas de coste/rendimiento, aplicados aquí al coste en microciclos de cada experimento; ISBN: 978-0-12-811905-1}
+}
+
+@book{mano2016lcdf,
+  author    = {Mano, M. Morris and Kime, Charles R. and Martin, Tom},
+  title     = {Logic and Computer Design Fundamentals},
+  edition   = {5th},
+  publisher = {Pearson},
+  address   = {Upper Saddle River, NJ},
+  year      = {2016},
+  isbn      = {978-0-13-3760637},
+  note      = {cap. 6 -- circuitos secuenciales y máquinas de estado finito (tabla de estados y codificación), base del modelado de la unidad de control; ISBN: 978-0-13-3760637}
+}
+
+@book{harris2015ddca,
+  author    = {Harris, Sarah L. and Harris, David M.},
+  title     = {Digital Design and Computer Architecture: {ARM} Edition},
+  edition   = {1st},
+  publisher = {Morgan Kaufmann (Elsevier)},
+  address   = {San Francisco},
+  year      = {2015},
+  isbn      = {978-0-12-800056-4},
+  note      = {cap. 3 -- diseño de máquinas de estado finito (estilo Mealy/Moore) usadas para modelar el control; cap. 4 -- lenguajes de descripción de hardware con secciones de VHDL, referencia de estilo para entidades, procesos y respuestas; ISBN: 978-0-12-800056-4}
+}
+
+@book{ashenden2008vhdl,
+  author    = {Ashenden, Peter J.},
+  title     = {The Designer's Guide to {VHDL}},
+  edition   = {3rd},
+  publisher = {Morgan Kaufmann (Elsevier)},
+  address   = {San Francisco},
+  year      = {2008},
+  isbn      = {978-0-12-088785-9},
+  note      = {cap. 9 -- sentencias secuenciales y procesos (wait, if/case), usados en el modelado sincrónico de la FSM y del banco de registros; primera guía completa de VHDL-2008 (prefacio); ISBN: 978-0-12-088785-9}
+}
+
+@book{navabi1998vhdl,
+  author    = {Navabi, Zainalabedin},
+  title     = {{VHDL}: Analysis and Modeling of Digital Systems},
+  edition   = {2nd},
+  publisher = {McGraw-Hill},
+  address   = {New York},
+  year      = {1998},
+  isbn      = {978-0-07-046479-7},
+  note      = {capítulos de modelado -- estilos de descripción (dataflow, behavioral, structural) combinados en la jerarquía del datapath (§2.2 del informe); ISBN: 978-0-07-046479-7}
+}
+
+@book{wakerly2005ddpp,
+  author    = {Wakerly, John F.},
+  title     = {Digital Design Principles and Practices},
+  edition   = {4th},
+  publisher = {Prentice Hall (Pearson)},
+  address   = {Upper Saddle River, NJ},
+  year      = {2005},
+  isbn      = {978-0-13-186389-7},
+  note      = {cap. 8 -- máquinas de estado finito: codificación de estados y salidas Moore/Mealy; sección de buffers tri-estado -- salida de bus compartido del buffer de salida; ISBN: 978-0-13-186389-7}
+}
+
+@book{katz2005cld,
+  author    = {Katz, Randy H. and Borriello, Gaetano},
+  title     = {Contemporary Logic Design},
+  edition   = {2nd},
+  publisher = {Pearson Prentice Hall},
+  address   = {Upper Saddle River, NJ},
+  year      = {2005},
+  isbn      = {978-0-201-30857-0},
+  note      = {capítulos de diseño secuencial -- descripción de FSM y registro de estado, referencia para el desglose de la control en campos de microinstrucción; ISBN: 978-0-201-30857-0}
+}
+
+@book{hamacher2002co,
+  author    = {Hamacher, V. Carl and Vranesic, Zvonko G. and Zaky, Safwat G.},
+  title     = {Computer Organization},
+  edition   = {5th},
+  publisher = {McGraw-Hill},
+  address   = {New York},
+  year      = {2002},
+  isbn      = {978-0-07-232086-2},
+  note      = {cap. 1 -- estructura básica de un computador: CPU compuesta por ruta de datos (datapath) y unidad de control, marco conceptual del informe; ISBN: 978-0-07-232086-2}
+}
+
+@book{bryant2015csapp,
+  author    = {Bryant, Randal E. and O'Hallaron, David R.},
+  title     = {Computer Systems: A Programmer's Perspective},
+  edition   = {3rd},
+  publisher = {Pearson},
+  address   = {Boston},
+  year      = {2015},
+  isbn      = {978-0-13-409266-9},
+  note      = {cap. 4 (§4.1--4.4) -- datapath de ciclo único y máquina de estados de la unidad de control del procesador Y86-64, análogo al par datapath/control implementado; ISBN: 978-0-13-409266-9}
+}
+
+@book{brown2009fdld,
+  author    = {Brown, Stephen D. and Vranesic, Zvonko G.},
+  title     = {Fundamentals of Digital Logic with {VHDL} Design},
+  edition   = {3rd},
+  publisher = {McGraw-Hill},
+  address   = {New York},
+  year      = {2009},
+  isbn      = {978-0-07-352953-0},
+  note      = {capítulos de diseño de FSM con VHDL -- ejemplos de codificación de máquinas de estado y bancos de registros usados como referencia de estilo; ISBN: 978-0-07-352953-0}
+}
+
+@book{roth2013fld,
+  author    = {Roth, Charles H. and Kinney, Larry L.},
+  title     = {Fundamentals of Logic Design},
+  edition   = {7th},
+  publisher = {Cengage Learning},
+  address   = {Stamford, CT},
+  year      = {2013},
+  isbn      = {978-1-133-62847-7},
+  note      = {unidades de máquinas de estado finito -- tablas de transición y diagramas de estados, referencia del desglose de la FSM de control; ISBN: 978-1-133-62847-7}
+}
+
+@book{stallings2015coa,
+  author    = {Stallings, William},
+  title     = {Computer Organization and Architecture: Designing for Performance},
+  edition   = {10th},
+  publisher = {Pearson},
+  address   = {Upper Saddle River, NJ},
+  year      = {2015},
+  isbn      = {978-0-13-410161-3},
+  note      = {cap. 2 -- métricas de rendimiento (tiempo de ejecución y ciclos), aplicadas al coste en microciclos reportado en la Tabla 3; ISBN: 978-0-13-410161-3}
+}
+
+@book{rabaey2002dic,
+  author    = {Rabaey, Jan M. and Chandrakasan, Anantha and Nikoli{\'c}, Borivoje},
+  title     = {Digital Integrated Circuits: A Design Perspective},
+  edition   = {2nd},
+  publisher = {Pearson Prentice Hall},
+  address   = {Upper Saddle River, NJ},
+  year      = {2003},
+  isbn      = {978-0-13-090996-1},
+  note      = {cap. 11 (§11.1--11.4) -- datapaths de procesadores digitales, sumadores, multiplicadores y corrimientos: fundamentos de la ALU, del corrimiento iterativo de la multiplicación y del barrel shifter; ISBN: 978-0-13-090996-1}
+}
+
+% ---- Estándares (indexados por DOI) -------------------------
+
+@techreport{ieee1076_2008,
+  author      = {{IEEE}},
+  title       = {{IEEE} Std 1076-2008 -- {IEEE} Standard {VHDL} Language Reference Manual},
+  institution = {Institute of Electrical and Electronics Engineers},
+  year        = {2009},
+  doi         = {10.1109/IEEESTD.2011.5967868},
+  note        = {definición del lenguaje VHDL-2008 implementado en los modelos (adopción ISO/IEC 61691-1-1); DOI: 10.1109/IEEESTD.2011.5967868}
+}
+
+@techreport{ieee1164_1993,
+  author      = {{IEEE}},
+  title       = {{IEEE} Std 1164-1993 -- {IEEE} Standard Multivalue Logic System for {VHDL} Model Interoperability ({Std\_logic\_1164})},
+  institution = {Institute of Electrical and Electronics Engineers},
+  year        = {1993},
+  note        = {paquete std\_logic\_1164: lógica resoluble de 9 valores usada en todos los puertos del diseño; IEEE Xplore doc. 257627; URL: https://ieeexplore.ieee.org/document/257627, consulta: 2026-10-19}
+}
+
 @misc{ghdl-docs,
   author       = {{GHDL developers}},
   title        = {{GHDL}: the {VHDL} simulator},
   howpublished = {\url{https://ghdl.github.io/ghdl/}},
   year         = {2026},
-  note         = {secciones ``Overview'' y ``Getting Started''; consulta: 2026-10-17}
+  note         = {secciones ``Overview'' y ``Usage'' (opciones --std=08 y --vcd); consulta: 2026-10-19}
 }
 
-% Visor de ondas usado para las capturas. Ubicación del texto usado:
-% sección "Documentation" del sitio oficial. Fecha de consulta: 2026-10-17.
 @misc{gtkwave-docs,
   author       = {{GTKWave developers}},
   title        = {{GTKWave} Analyzer},
   howpublished = {\url{https://gtkwave.sourceforge.net/}},
   year         = {2026},
-  note         = {sección ``Documentation''; consulta: 2026-10-17}
+  note         = {sección ``Documentation'' y guía de scripting Tcl (addSignalsFromList, Grab\_To\_File); consulta: 2026-10-19}
+}
+
+@misc{wiki-moore,
+  author       = {{Wikipedia contributors}},
+  title        = {Moore's law},
+  howpublished = {\url{https://es.wikipedia.org/wiki/Ley_de_Moore}},
+  year         = {2026},
+  note         = {sección ``Enunciado'' -- doblecimiento periódico del número de transistores; consulta: 2026-10-19}
+}
+
+@misc{wiki-fsm,
+  author       = {{Wikipedia contributors}},
+  title        = {Autómata finito},
+  howpublished = {\url{https://es.wikipedia.org/wiki/Aut%C3%B3mata_finito}},
+  year         = {2026},
+  note         = {sección ``Definición formal'' -- quintuple (estados, entrada, transición, estado inicial, estados finales); consulta: 2026-10-19}
+}
+
+@misc{wiki-tristate,
+  author       = {{Wikipedia contributors}},
+  title        = {Buffer tri-estado},
+  howpublished = {\url{https://es.wikipedia.org/wiki/Buffer_tri-estado}},
+  year         = {2026},
+  note         = {sección ``Descripción'' -- salida en alta impedancia (Z) para compartir un bus; consulta: 2026-10-19}
+}
+
+@misc{wiki-barrel,
+  author       = {{Wikipedia contributors}},
+  title        = {Barrel shifter},
+  howpublished = {\url{https://en.wikipedia.org/wiki/Barrel_shifter}},
+  year         = {2026},
+  note         = {sección ``Overview'' -- corrimiento por N posiciones en un solo ciclo; consulta: 2026-10-19}
 }

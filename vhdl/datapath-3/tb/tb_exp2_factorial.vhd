@@ -1,0 +1,145 @@
+-- ============================================================
+-- Testbench del Experimento 2: factorial de n (n >= 1, n <= 5
+-- por desbordamiento de 8 bits: 5! = 120, 6! = 720).
+-- Multiplicación por sumas repetidas (rutina de los pasos 42..54).
+-- Instancia datapath + control (modo = "01"); EXT1 presenta
+-- 1 (paso 33), n (paso 35) y 2 (paso 38).
+-- Casos: n = 1 → 1, n = 5 → 120.
+-- ============================================================
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+entity tb_exp2_factorial is
+end entity;
+
+architecture tb of tb_exp2_factorial is
+    component datapath is
+        port (
+            clk      : in  std_logic;
+            rst      : in  std_logic;
+            ext_data : in  std_logic_vector(7 downto 0);
+            sel_sup  : in  std_logic_vector(1 downto 0);
+            wr_acc   : in  std_logic;
+            clr_acc  : in  std_logic;
+            addr     : in  std_logic_vector(2 downto 0);
+            wr_rf    : in  std_logic;
+            op_alu   : in  std_logic_vector(2 downto 0);
+            sel_inf  : in  std_logic;
+            sh       : in  std_logic_vector(1 downto 0);
+            out_en   : in  std_logic;
+            cero     : out std_logic;
+            dato_out : out std_logic_vector(7 downto 0);
+            acc_q    : out std_logic_vector(7 downto 0);
+            rf_dout  : out std_logic_vector(7 downto 0)
+        );
+    end component;
+
+    component control is
+        port (
+            clk     : in  std_logic;
+            rst     : in  std_logic;
+            cero    : in  std_logic;
+            modo    : in  std_logic_vector(1 downto 0);
+            sel_sup : out std_logic_vector(1 downto 0);
+            wr_acc  : out std_logic;
+            clr_acc : out std_logic;
+            addr    : out std_logic_vector(2 downto 0);
+            wr_rf   : out std_logic;
+            op_alu  : out std_logic_vector(2 downto 0);
+            sel_inf : out std_logic;
+            sh      : out std_logic_vector(1 downto 0);
+            out_en  : out std_logic;
+            fin     : out std_logic;
+            paso    : out std_logic_vector(6 downto 0);
+            ciclos  : out std_logic_vector(15 downto 0)
+        );
+    end component;
+
+    signal clk      : std_logic := '0';
+    signal rst      : std_logic := '1';
+    signal modo     : std_logic_vector(1 downto 0) := "01";
+    signal cero     : std_logic;
+    signal fin      : std_logic;
+    signal sel_sup  : std_logic_vector(1 downto 0);
+    signal wr_acc   : std_logic;
+    signal clr_acc  : std_logic;
+    signal addr     : std_logic_vector(2 downto 0);
+    signal wr_rf    : std_logic;
+    signal op_alu   : std_logic_vector(2 downto 0);
+    signal sel_inf  : std_logic;
+    signal sh       : std_logic_vector(1 downto 0);
+    signal out_en   : std_logic;
+    signal paso     : std_logic_vector(6 downto 0);
+    signal ciclos   : std_logic_vector(15 downto 0);
+    signal ext_data : std_logic_vector(7 downto 0);
+    signal dato_out : std_logic_vector(7 downto 0);
+    signal acc_q    : std_logic_vector(7 downto 0);
+    signal rf_dout  : std_logic_vector(7 downto 0);
+
+    signal n : natural := 5;
+begin
+    dp : datapath port map (
+        clk => clk, rst => rst, ext_data => ext_data,
+        sel_sup => sel_sup, wr_acc => wr_acc, clr_acc => clr_acc,
+        addr => addr, wr_rf => wr_rf, op_alu => op_alu,
+        sel_inf => sel_inf, sh => sh, out_en => out_en,
+        cero => cero, dato_out => dato_out,
+        acc_q => acc_q, rf_dout => rf_dout
+    );
+
+    ct : control port map (
+        clk => clk, rst => rst, cero => cero, modo => modo,
+        sel_sup => sel_sup, wr_acc => wr_acc, clr_acc => clr_acc,
+        addr => addr, wr_rf => wr_rf, op_alu => op_alu,
+        sel_inf => sel_inf, sh => sh, out_en => out_en,
+        fin => fin, paso => paso, ciclos => ciclos
+    );
+
+    -- EXT1: paso 33 = 1, paso 35 = n, paso 38 = 2 (plan §8.5)
+    ext_data <= x"01"                             when paso = "0100001" else
+                std_logic_vector(to_unsigned(n, 8)) when paso = "0100011" else
+                x"02"                             when paso = "0100110" else
+                (others => '0');
+
+    stim : process
+        procedure tick is
+        begin
+            clk <= '0';
+            wait for 5 ns;
+            clk <= '1';
+            wait for 5 ns;
+        end procedure;
+
+        procedure caso(constant nv : in natural; constant esperado : in natural) is
+        begin
+            n   <= nv;
+            rst <= '1';
+            tick;
+            tick;
+            rst <= '0';
+            for i in 1 to 1000 loop
+                tick;
+                exit when fin = '1';
+            end loop;
+            assert fin = '1'
+                report "exp2: no terminó para n = " & integer'image(nv)
+                severity failure;
+            tick;  -- ejecuta la palabra FIN
+            assert acc_q = std_logic_vector(to_unsigned(esperado, 8))
+                report "exp2: " & integer'image(nv) & "! = " &
+                       integer'image(to_integer(unsigned(acc_q))) &
+                       ", esperaba " & integer'image(esperado)
+                severity failure;
+            report "exp2: " & integer'image(nv) & "! = " &
+                   integer'image(esperado) & " OK en " &
+                   integer'image(to_integer(unsigned(ciclos))) & " microciclos"
+                severity note;
+        end procedure;
+    begin
+        caso(1, 1);
+        caso(5, 120);
+        report "tb_exp2_factorial: OK" severity note;
+        wait;
+    end process;
+end architecture;
