@@ -39,16 +39,17 @@
 \title{Diseño e implementación en VHDL de un datapath
 de 8 bits para sumatoria, factorial y multiplicación}
 
-\author{Nombre Apellido$^{1}$,%
-\and Nombre Apellido$^{1}$,%
-\and Nombre Apellido$^{1}$,%
-\and Nombre Apellido$^{1}$,%
-\and Nombre Apellido$^{1}$}
+\author{Alfredo Ramírez Candia$^{1}$,%
+\and Aldo Mauricio Villegas Peralta$^{1}$,%
+\and Uriel Lemus Pérez$^{1}$,%
+\and Santiago Silverio Flores$^{1}$,%
+\and Max Ramos Martinez$^{1}$}
 
-\authorrunning{Apellido et al.}
+\authorrunning{Ramírez Candia et al.}
 \institute{Equipo de Arquitectura de Computadoras,\\
-Universidad, Ciudad, País\\
-\email{\{correo1, correo2, correo3, correo4, correo5\}@universidad.mx}}
+Benemérita Universidad Autónoma de Puebla,\\
+Puebla, México\\
+\email{\{rc202375947,vp202368617,lp202362797,sf202367190,rm202376182\}@alm.buap.mx}}
 
 \maketitle
 
@@ -325,14 +326,19 @@ $A\times0=0$.
 \section{Simulaciones de VHDL}
 \label{sec:simulaciones}
 
-Las capturas se obtuvieron de los archivos \texttt{.vcd} generados por
-\texttt{scripts/vhdl-sim} y exportadas a PNG en \texttt{figuras/}. La
-Figura~\ref{fig:alu} muestra la ALU recorriendo sus ocho operaciones; se
-observa cómo cambia \texttt{f} al variar \texttt{op\_alu}. Las
-Figuras~\ref{fig:exp1}--\ref{fig:exp3} presentan los tres experimentos de
-extremo a extremo, donde \texttt{paso} recorre los microciclos y
-\texttt{acc\_q}/\texttt{dato\_out} alcanzan el resultado esperado al
-activarse \texttt{fin}.
+Las capturas de las Figuras~\ref{fig:alu}--\ref{fig:datapath} son
+fotografías de las ventanas de GTKWave al cargar los archivos \texttt{.vcd}
+que genera \texttt{scripts/vhdl-sim}. La Figura~\ref{fig:alu} muestra el
+banco de pruebas de la ALU con \texttt{a=05h} y \texttt{b=03h}:
+\texttt{op\_alu} recorre sus ocho códigos y \texttt{f} presenta el
+resultado de cada operación. Las Figuras~\ref{fig:exp1}--\ref{fig:exp3}
+presentan los tres experimentos de extremo a extremo; en todas aparecen el
+reloj, el reinicio, la entrada \texttt{ext1}, el código de microinstrucción
+\texttt{paso}, el contador de \texttt{ciclos}, las salidas \texttt{acc\_q} y
+\texttt{dato\_out} y la bandera \texttt{fin}. Durante cada experimento
+\texttt{paso} recorre los microciclos del bucle de suma repetida,
+\texttt{acc\_q} acumula los parciales y, al activarse \texttt{fin},
+\texttt{dato\_out} presenta el resultado.
 
 \begin{figure}[t]
   \centering
@@ -361,14 +367,17 @@ activarse \texttt{fin}.
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.98\textwidth]{figuras/captura_exp3_mult.png}
-  \caption{Experimento 3 (multiplicación $A\times B$): resultado en
-  \texttt{dato\_out} tras el bucle de suma repetida.}
+  \caption{Experimento 3 (multiplicación $A\times B$): cuatro productos
+  encadenados; \texttt{dato\_out} destapa el resultado al final de cada
+  bucle de suma repetida, junto al pulso de \texttt{fin}.}
   \label{fig:exp3}
 \end{figure}
 
 La Figura~\ref{fig:datapath} recoge una simulación del \emph{top} integrado
-donde se aprecia la secuencia de micro-operaciones internas
-(\texttt{bus\_acc}, \texttt{rf\_dout}, \texttt{cero}).
+gobernada paso a paso desde el banco de pruebas, donde se aprecia la
+secuencia de micro-operaciones internas (\texttt{bus\_acc},
+\texttt{rf\_dout}, \texttt{cero}) junto a las señales de control
+\texttt{wr\_acc}, \texttt{clr\_acc} y \texttt{wr\_rf}.
 
 \begin{figure}[t]
   \centering
