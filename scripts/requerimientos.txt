@@ -13,6 +13,11 @@
 
 # ---------- Simulación VHDL ----------
 ghdl        >= 4.1     # compilador/simulador VHDL. Ubuntu(WSL) trae 4.1, Arch trae 6.0.
+                       # EN ARCH NO ESTÁ EN LOS REPOS OFICIALES: vive en AUR
+                       #   (paquete `ghdl`, backend mcode, depende de gcc-ada).
+                       #   Instalación: yay -S ghdl   (o paru -S ghdl)
+                       #   Sin helper AUR: git clone https://aur.archlinux.org/ghdl.git
+                       #                   && cd ghdl && makepkg -si
                        # Backend mcode: SIMULACIÓN únicamente (no sirve para síntesis).
                        # Los fuentes deben ser compatibles con ambos => VHDL-2008 conservador.
 gtkwave     >= 3.3     # visor de formas de onda (archivos .vcd).
@@ -21,6 +26,13 @@ gtkwave     >= 3.3     # visor de formas de onda (archivos .vcd).
 # ---------- Compilación LaTeX (Springer llncs) ----------
 latexmk     >= 4.87    # orquestador de compilación (usado por scripts/latexbuild).
 xelatex     # motor Unicode — scripts/latexbuild invoca `latexmk -xelatex`.
+                       # OJO: además del binario hace falta el FORMATO xelatex.fmt.
+                       # En Arch el binario lo trae `texlive-bin`, pero el formato
+                       # lo aporta `texlive-xetex` (sin él: "I can't find the
+                       # format file `xelatex.fmt'!"). En Ubuntu: `texlive-xetex`.
+                       # Verificación: kpsewhich --engine=xetex xelatex.fmt
+                       # (sin --engine, kpsewhich NO busca .fmt y devuelve vacío
+                       #  aunque el formato esté instalado).
 llncs.cls   # clase Springer LNCS. Paquete: texlive-publishers (Arch/Ubuntu).
 splncs04.bst# estilo de bibliografía Springer. Paquete: texlive-publishers.
 # NOTA: en Arch y Ubuntu llncs.cls y splncs04.bst vienen en `texlive-publishers`.

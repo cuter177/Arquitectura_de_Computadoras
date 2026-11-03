@@ -80,15 +80,61 @@ INSTALAR_APT() {
 }
 
 INSTALAR_PACMAN() {
+    # OJO: `ghdl` NO está en los repositorios oficiales de Arch (se retiró y
+    # ahora vive en AUR), así que un `pacman -S ghdl` falla con
+    # "no se ha encontrado el paquete: ghdl". Primero lo oficial y después
+    # GHDL desde AUR (ver INSTALAR_GHDL_AUR).
+    #
+    # OJO 2: `texlive-bin` solo trae el ejecutable `xelatex`; el FORMATO
+    # (`xelatex.fmt`) lo aporta `texlive-xetex`, que además es quien registra
+    # la entrada de `xelatex` en fmtutil.cnf. Sin `texlive-xetex` el binario
+    # existe pero falla con "I can't find the format file `xelatex.fmt'!".
     sudo pacman -S --needed --noconfirm \
-        ghdl \
         gtkwave \
         texlive-bin \
         texlive-binextra \
-        texlive-publishers \
         texlive-latexextra \
+        texlive-publishers \
+        texlive-xetex \
         git \
         make
+    INSTALAR_GHDL_AUR
+}
+
+# GHDL en Arch solo está en AUR (paquete `ghdl`, backend mcode, depende de
+# gcc-ada y se compila desde fuente: tarda varios minutos).
+INSTALAR_GHDL_AUR() {
+    if command -v ghdl >/dev/null 2>&1; then
+        ok "ghdl ya está instalado; no hace falta tocar AUR"
+        return 0
+    fi
+
+    local helper=""
+    local h
+    for h in yay paru; do
+        if command -v "$h" >/dev/null 2>&1; then
+            helper="$h"
+            break
+        fi
+    done
+
+    if [[ -n "$helper" ]]; then
+        echo "--- GHDL (AUR: paquete 'ghdl', backend mcode) con $helper ---"
+        "$helper" -S --needed --noconfirm ghdl
+        hash -r   # para que la verificación vea el ghdl recién instalado
+        return 0
+    fi
+
+    aviso "GHDL no está en los repos oficiales de Arch: hay que instalarlo desde AUR."
+    info "  Opción A (recomendada): instala un helper de AUR y repite este script:"
+    info "    sudo pacman -S --needed base-devel git"
+    info "    git clone https://aur.archlinux.org/yay.git /tmp/yay && (cd /tmp/yay && makepkg -si)"
+    info "    bash scripts/instalar.sh"
+    info "  Opción B (sin helper, compila a mano):"
+    info "    sudo pacman -S --needed base-devel git"
+    info "    git clone https://aur.archlinux.org/ghdl.git /tmp/ghdl && (cd /tmp/ghdl && makepkg -si)"
+    info "  Detalle: https://aur.archlinux.org/packages/ghdl"
+    return 1
 }
 
 INSTALAR_DNF() {
@@ -108,30 +154,40 @@ INSTALAR_BREW() {
     info "  Si usas BasicTeX: tlmgr install latexmk xetex llncs publishers"
 }
 
+# Ejecuta una función de instalación sin abortar el script si falla: la
+# verificación de abajo dirá exactamente qué falta. Sin esto, `set -e` mata
+# el script en el primer paquete problemático y el usuario no ve el resumen.
+intentar_instalar() {
+    local descripcion="$1"; shift
+    if ! "$@"; then
+        aviso "La instalación de $descripcion falló o se canceló; continúo con la verificación."
+    fi
+}
+
 if [[ $SOLO_CHECK -eq 0 ]]; then
     case "$SISTEMA" in
         ubuntu|debian|pop|linuxmint|raspbian)
             echo "--- Instalando paquetes (apt) ---"
-            INSTALAR_APT
+            intentar_instalar "los paquetes de apt" INSTALAR_APT
             ;;
         arch|manjaro|endeavouros|artix)
             echo "--- Instalando paquetes (pacman) ---"
-            INSTALAR_PACMAN
+            intentar_instalar "los paquetes de pacman/AUR" INSTALAR_PACMAN
             ;;
         fedora)
             echo "--- Instalando paquetes (dnf) ---"
-            INSTALAR_DNF
+            intentar_instalar "los paquetes de dnf" INSTALAR_DNF
             ;;
         macos)
             echo "--- Instalando (Homebrew) ---"
-            INSTALAR_BREW
+            intentar_instalar "los paquetes de Homebrew" INSTALAR_BREW
             ;;
         *)
             if [[ $ES_WSL -eq 1 ]]; then
                 # WSL con distro no reconocida: probamos apt por si acaso
                 if command -v apt-get >/dev/null 2>&1; then
                     echo "--- WSL: usando apt ---"
-                    INSTALAR_APT
+                    intentar_instalar "los paquetes de apt" INSTALAR_APT
                 else
                     falta "Distro WSL no reconocida. Instala manualmente (ver docs/guia-wsl.md)."
                     FALLOS=$((FALLOS+1))
@@ -141,7 +197,8 @@ if [[ $SOLO_CHECK -eq 0 ]]; then
                 echo -e " ${ROJO}Sistema operativo no soportado por este script.${RESET}"
                 echo "         Instala manualmente según scripts/requerimientos.txt"
                 echo "         - Ubuntu/Debian: apt install ghdl gtkwave latexmk texlive-xetex texlive-publishers ..."
-                echo "         - Arch:          pacman -S ghdl gtkwave texlive-bin texlive-publishers ..."
+                echo "         - Arch:          pacman -S texlive-publishers texlive-latexextra texlive-xetex ..."
+                echo "                          y GHDL desde AUR (p. ej. yay -S ghdl)"
                 echo "         - Windows:       usa WSL2 + Ubuntu (docs/guia-wsl.md)"
                 exit 1
             fi
@@ -171,6 +228,12 @@ if command -v ghdl >/dev/null 2>&1; then
     rm -rf "$TMPD"
 else
     falta "ghdl (simulador VHDL)"
+    case "$SISTEMA" in
+        arch|manjaro|endeavouros|artix)
+            info "  En Arch GHDL NO está en los repos oficiales: instálalo desde AUR."
+            info "    yay -S ghdl     # o: paru -S ghdl"
+            ;;
+    esac
     FALLOS=$((FALLOS+1))
 fi
 
@@ -200,10 +263,56 @@ else
     falta "latexmk"
     FALLOS=$((FALLOS+1))
 fi
+# Localiza el formato precompilado de xelatex y lo imprime (vacío si no está).
+# OJO: `kpsewhich xelatex.fmt` A SECAS NO SIRVE. Los .fmt se buscan por motor y
+# kpsewhich, sin `--engine`, devuelve vacío aunque el fichero exista (lo dice su
+# propio `--help`: "When looking up format (.fmt/.base/.mem) files, it is
+# usually necessary to also use -engine"). De ahí los falsos [FALTA] en Arch y
+# Ubuntu. Se prueban varias formas y, como último recurso, las rutas típicas.
+buscar_fmt_xelatex() {
+    local ruta="" candidato
+    if command -v kpsewhich >/dev/null 2>&1; then
+        # --engine=xetex es lo correcto; si el kpsewhich es viejo, -engine=/
+        ruta=$(kpsewhich --engine=xetex xelatex.fmt 2>/dev/null | head -1 || true)
+        if [[ -z "$ruta" ]]; then
+            ruta=$(kpsewhich --engine=/ xelatex.fmt 2>/dev/null | head -1 || true)
+        fi
+    fi
+    if [[ -z "$ruta" ]]; then
+        for candidato in \
+            "${TEXMFSYSVAR:-/var/lib/texmf}"/web2c/*/xelatex.fmt \
+            "${TEXMFVAR:-$HOME/.texlive/texmf-var}"/web2c/*/xelatex.fmt \
+            /usr/share/texmf/web2c/*/xelatex.fmt \
+            /usr/local/texlive/*/texmf-var/web2c/*/xelatex.fmt; do
+            [[ -f "$candidato" ]] && { ruta="$candidato"; break; }
+        done
+    fi
+    printf '%s' "$ruta"
+}
+
 if command -v xelatex >/dev/null 2>&1; then
-    ok "xelatex disponible"
+    # Tener el binario no basta: `xelatex` necesita su formato precompilado
+    # (xelatex.fmt). En Arch el binario viene de `texlive-bin`, pero el
+    # formato lo aporta `texlive-xetex`; sin él, la compilación muere con
+    # "I can't find the format file `xelatex.fmt'!".
+    FMT_XELATEX=$(buscar_fmt_xelatex)
+    if [[ -n "$FMT_XELATEX" ]]; then
+        ok "xelatex + formato ($FMT_XELATEX)"
+    else
+        falta "el formato xelatex.fmt (paquete texlive-xetex)"
+        case "$SISTEMA" in
+            arch|manjaro|endeavouros|artix)
+                info "  sudo pacman -S --needed texlive-xetex"
+                ;;
+            ubuntu|debian|pop|linuxmint|raspbian)
+                info "  sudo apt install texlive-xetex"
+                ;;
+        esac
+        info "  Luego se regenera solo (hook de TeX Live); si no: sudo fmtutil-sys --byfmt xelatex"
+        FALLOS=$((FALLOS+1))
+    fi
 else
-    falta "xelatex (texlive-xetex)"
+    falta "xelatex (paquete texlive-xetex)"
     FALLOS=$((FALLOS+1))
 fi
 
