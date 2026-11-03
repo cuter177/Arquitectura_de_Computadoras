@@ -263,13 +263,41 @@ else
     falta "latexmk"
     FALLOS=$((FALLOS+1))
 fi
+# Localiza el formato precompilado de xelatex y lo imprime (vacío si no está).
+# OJO: `kpsewhich xelatex.fmt` A SECAS NO SIRVE. Los .fmt se buscan por motor y
+# kpsewhich, sin `--engine`, devuelve vacío aunque el fichero exista (lo dice su
+# propio `--help`: "When looking up format (.fmt/.base/.mem) files, it is
+# usually necessary to also use -engine"). De ahí los falsos [FALTA] en Arch y
+# Ubuntu. Se prueban varias formas y, como último recurso, las rutas típicas.
+buscar_fmt_xelatex() {
+    local ruta="" candidato
+    if command -v kpsewhich >/dev/null 2>&1; then
+        # --engine=xetex es lo correcto; si el kpsewhich es viejo, -engine=/
+        ruta=$(kpsewhich --engine=xetex xelatex.fmt 2>/dev/null | head -1 || true)
+        if [[ -z "$ruta" ]]; then
+            ruta=$(kpsewhich --engine=/ xelatex.fmt 2>/dev/null | head -1 || true)
+        fi
+    fi
+    if [[ -z "$ruta" ]]; then
+        for candidato in \
+            "${TEXMFSYSVAR:-/var/lib/texmf}"/web2c/*/xelatex.fmt \
+            "${TEXMFVAR:-$HOME/.texlive/texmf-var}"/web2c/*/xelatex.fmt \
+            /usr/share/texmf/web2c/*/xelatex.fmt \
+            /usr/local/texlive/*/texmf-var/web2c/*/xelatex.fmt; do
+            [[ -f "$candidato" ]] && { ruta="$candidato"; break; }
+        done
+    fi
+    printf '%s' "$ruta"
+}
+
 if command -v xelatex >/dev/null 2>&1; then
     # Tener el binario no basta: `xelatex` necesita su formato precompilado
     # (xelatex.fmt). En Arch el binario viene de `texlive-bin`, pero el
     # formato lo aporta `texlive-xetex`; sin él, la compilación muere con
     # "I can't find the format file `xelatex.fmt'!".
-    if command -v kpsewhich >/dev/null 2>&1 && kpsewhich xelatex.fmt >/dev/null 2>&1; then
-        ok "xelatex + formato ($(kpsewhich xelatex.fmt))"
+    FMT_XELATEX=$(buscar_fmt_xelatex)
+    if [[ -n "$FMT_XELATEX" ]]; then
+        ok "xelatex + formato ($FMT_XELATEX)"
     else
         falta "el formato xelatex.fmt (paquete texlive-xetex)"
         case "$SISTEMA" in

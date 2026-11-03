@@ -30,7 +30,9 @@ xelatex     # motor Unicode — scripts/latexbuild invoca `latexmk -xelatex`.
                        # En Arch el binario lo trae `texlive-bin`, pero el formato
                        # lo aporta `texlive-xetex` (sin él: "I can't find the
                        # format file `xelatex.fmt'!"). En Ubuntu: `texlive-xetex`.
-                       # Verificación: kpsewhich xelatex.fmt
+                       # Verificación: kpsewhich --engine=xetex xelatex.fmt
+                       # (sin --engine, kpsewhich NO busca .fmt y devuelve vacío
+                       #  aunque el formato esté instalado).
 llncs.cls   # clase Springer LNCS. Paquete: texlive-publishers (Arch/Ubuntu).
 splncs04.bst# estilo de bibliografía Springer. Paquete: texlive-publishers.
 # NOTA: en Arch y Ubuntu llncs.cls y splncs04.bst vienen en `texlive-publishers`.
