@@ -84,12 +84,18 @@ INSTALAR_PACMAN() {
     # ahora vive en AUR), así que un `pacman -S ghdl` falla con
     # "no se ha encontrado el paquete: ghdl". Primero lo oficial y después
     # GHDL desde AUR (ver INSTALAR_GHDL_AUR).
+    #
+    # OJO 2: `texlive-bin` solo trae el ejecutable `xelatex`; el FORMATO
+    # (`xelatex.fmt`) lo aporta `texlive-xetex`, que además es quien registra
+    # la entrada de `xelatex` en fmtutil.cnf. Sin `texlive-xetex` el binario
+    # existe pero falla con "I can't find the format file `xelatex.fmt'!".
     sudo pacman -S --needed --noconfirm \
         gtkwave \
         texlive-bin \
         texlive-binextra \
-        texlive-publishers \
         texlive-latexextra \
+        texlive-publishers \
+        texlive-xetex \
         git \
         make
     INSTALAR_GHDL_AUR
@@ -191,7 +197,7 @@ if [[ $SOLO_CHECK -eq 0 ]]; then
                 echo -e " ${ROJO}Sistema operativo no soportado por este script.${RESET}"
                 echo "         Instala manualmente según scripts/requerimientos.txt"
                 echo "         - Ubuntu/Debian: apt install ghdl gtkwave latexmk texlive-xetex texlive-publishers ..."
-                echo "         - Arch:          pacman -S gtkwave texlive-publishers texlive-latexextra ..."
+                echo "         - Arch:          pacman -S texlive-publishers texlive-latexextra texlive-xetex ..."
                 echo "                          y GHDL desde AUR (p. ej. yay -S ghdl)"
                 echo "         - Windows:       usa WSL2 + Ubuntu (docs/guia-wsl.md)"
                 exit 1
@@ -258,9 +264,27 @@ else
     FALLOS=$((FALLOS+1))
 fi
 if command -v xelatex >/dev/null 2>&1; then
-    ok "xelatex disponible"
+    # Tener el binario no basta: `xelatex` necesita su formato precompilado
+    # (xelatex.fmt). En Arch el binario viene de `texlive-bin`, pero el
+    # formato lo aporta `texlive-xetex`; sin él, la compilación muere con
+    # "I can't find the format file `xelatex.fmt'!".
+    if command -v kpsewhich >/dev/null 2>&1 && kpsewhich xelatex.fmt >/dev/null 2>&1; then
+        ok "xelatex + formato ($(kpsewhich xelatex.fmt))"
+    else
+        falta "el formato xelatex.fmt (paquete texlive-xetex)"
+        case "$SISTEMA" in
+            arch|manjaro|endeavouros|artix)
+                info "  sudo pacman -S --needed texlive-xetex"
+                ;;
+            ubuntu|debian|pop|linuxmint|raspbian)
+                info "  sudo apt install texlive-xetex"
+                ;;
+        esac
+        info "  Luego se regenera solo (hook de TeX Live); si no: sudo fmtutil-sys --byfmt xelatex"
+        FALLOS=$((FALLOS+1))
+    fi
 else
-    falta "xelatex (texlive-xetex)"
+    falta "xelatex (paquete texlive-xetex)"
     FALLOS=$((FALLOS+1))
 fi
 
