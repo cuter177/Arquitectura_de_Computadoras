@@ -49,8 +49,11 @@ scripts/    scripts oficiales (fuente de verdad para compilar/simular)
   latexbuild          compila reportes LaTeX
   vhdl-analizar|vhdl-sim|vhdl-wave   flujo GHDL/GTKWave
 reportes/   los 4 reportes LaTeX + plantilla (comun/plantilla_base.tex)
-vhdl/       src/ tb/ salidas/ por cada una de las 4 unidades
+  <unidad>/   main.tex  referencias.bib  figuras/
+vhdl/       una carpeta por unidad
+  <unidad>/   src/ (diseño)  tb/ (testbenches)  salidas/ (.vcd, no se versionan)
 docs/       guias: wsl, git, opencode + plantilla docx de referencia
+.github/    plantilla de PR + issues + CI (GHDL y scripts en cada PR)
 AGENTS.md   reglas del proyecto para la IA (OpenCode)
 ```
 
@@ -71,4 +74,9 @@ AGENTS.md   reglas del proyecto para la IA (OpenCode)
   el texto sugerido** (capítulo/página/URL+fecha).
 - **VHDL:** un testbench obligatorio por módulo; debe pasar `scripts/vhdl-sim`.
 - **Compilación:** siempre vía `scripts/latexbuild` (nunca `latexmk` a mano).
-- **Git:** nunca push directo a `main`; todo por PR hacia `dev`.
+- **Git:** nunca push directo a `main`; todo por PR hacia `dev`, y **una rama
+  por cada feature** (`vhdl/<unidad>/<feat>`, `reporte/<unidad>/<feat>`…),
+  aunque no te la pidan.
+- **PRs:** la checklist de `.github/PULL_REQUEST_TEMPLATE.md` resume lo que
+  debe cumplir todo cambio; el CI repite la parte automatizable (`bash -n` de
+  los scripts + `vhdl-analizar`/`vhdl-sim` de cada unidad).

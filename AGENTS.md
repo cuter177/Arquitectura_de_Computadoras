@@ -18,6 +18,7 @@ los scripts existentes**. No recomiendes comandos `latexmk`, `ghdl` o
 | "¿Cómo compilo solo un .vhd?" | `scripts/vhdl-analizar <unidad>` |
 | "No me funciona / me faltan herramientas" | `bash scripts/instalar.sh` (o `--check` para solo verificar) |
 | "¿Cómo se trabaja con Git aquí?" | `docs/guia-git.md` |
+| "Añade/modifica este módulo, sección o guía" | **Abre primero la rama por feature** (ver sección **Git**) aunque no te lo pidan |
 | "Estoy en Windows/WSL" | `docs/guia-wsl.md` |
 | "¿Cómo uso OpenCode en este repo?" | `docs/guia-opencode.md` |
 
@@ -97,8 +98,14 @@ sin poder señalar el lugar exacto de la que salió la idea o la frase. Mínimo
 ## Git
 
 - Rama base: **`dev`**. Nunca se hace push directo a `main`.
-- Ramas por unidad de trabajo: `reporte/<unidad>` y `vhdl/<unidad>`, con PR a
-  `dev`. Flujo completo en `docs/guia-git.md`.
+- **Una rama por cada feature — ábrela SIEMPRE antes de tocar ficheros, aunque
+  el usuario no la pida explícitamente.** Vale para features de VHDL, de
+  reportes y de scripts/docs. Nombres según el tipo de trabajo:
+  - VHDL: `vhdl/<unidad>/<feat>` → ej. `vhdl/datapath-1/tb-alu`
+  - Reporte: `reporte/<unidad>/<feat>` → ej. `reporte/datapath-1/seccion-simulaciones`
+  - Docs/scripts/repo: `docs/<feat>`, `scripts/<feat>`, `repo/<feat>`
+- Regla: **un cambio = una rama**; termina el PR (fusionado en `dev`) antes de
+  abrir la siguiente. Flujo completo en `docs/guia-git.md`.
 - Commits en español con Conventional Commits:
   `reporte(datapath-1): añadir sección de diseño teórico`.
 

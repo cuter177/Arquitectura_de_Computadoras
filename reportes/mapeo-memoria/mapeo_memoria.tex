@@ -1,0 +1,917 @@
+% ============================================================
+% Reporte: mapeo-memoria
+% Generado a partir de reportes/comun/plantilla_base.tex
+% (NO edites la plantilla: cada unidad trabaja en su main.tex)
+%
+% Reglas de secciones y extensiones: reportes/AGENTS.md
+% Compilar SIEMPRE con:
+%   ../../scripts/latexbuild main.tex      (desde esta carpeta)
+%   → genera build/main.pdf
+% ============================================================
+\documentclass[llncs]{llncs}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+% ---- AVISO DE CODIFICACIÓN (xelatex + T1) ----
+% Con la cadena del proyecto (xelatex con codificación T1) los caracteres
+% UTF-8 de la banda 0x80-0xFF escritos como literal se remapean mal y
+% salen otros glifos: « » § ª · aparecen como ń ż ğ ł ů.
+% En su lugar usa las macros de LaTeX, que sí funcionan:
+%   «texto»  ->  ``texto''          §6.2   ->  \S6.2
+%   ª        ->  \textordfeminine   ·      ->  \textperiodcentered
+% Sí funcionan como literal: los acentos (á é í ó ú ñ ü) y  – — “ ” → .
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{xcolor}
+
+% ---- Estilo para código VHDL (apéndice y fragmentos) ----
+\lstdefinestyle{vhdl}{
+  language=VHDL,
+  basicstyle=\ttfamily\scriptsize,
+  keywordstyle=\color{black},
+  commentstyle=\color{gray}\itshape,
+  stringstyle=\color{black},
+  showstringspaces=false,
+  upquote=true,
+  columns=fullflexible,
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{black}
+}
+\lstset{style=vhdl}
+\renewcommand{\lstlistingname}{Listado}
+
+% ---- Estilo para bloques de comandos del repositorio (sección 3) ----
+\lstdefinestyle{shell}{
+  basicstyle=\ttfamily\scriptsize,
+  keywordstyle=\color{black},
+  commentstyle=\color{gray}\itshape,
+  stringstyle=\color{black},
+  showstringspaces=false,
+  upquote=true,
+  columns=fullflexible,
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{black}
+}
+
+\begin{document}
+
+% ============================================================
+% TÍTULO Y AUTORES  (los 5 integrantes del equipo — por rellenar)
+% ============================================================
+\title{Comparación de las funciones de mapeo de la memoria caché\\
+mediante simulación VHDL}
+
+\author{Alfredo Ramírez Candia$^{1}$%
+\and Aldo Mauricio Villegas Peralta$^{1}$%
+\and Uriel Lemus Pérez$^{1}$%
+\and Santiago Silverio Flores$^{1}$%
+\and Max Ramos Martinez$^{1}$}
+
+\authorrunning{Apellido et al.}
+\institute{Equipo de Arquitectura de Computadoras,\\
+Benemérita Universidad Autónoma de Puebla, Puebla, México.\\
+\email{\{rc202375947, vp202368617, lp202362797, sf202367190, rm202376182\}@alm.buap.mx}}
+
+\maketitle
+
+% ============================================================
+% RESUMEN  (< 100 palabras — fuente 9pt con sangría, estilo llncs)
+% ============================================================
+\begin{abstract}
+Resumen. Se comparan mediante simulación VHDL-2008 las tres funciones
+de mapeo de la memoria caché: directo, asociativo total y asociativo
+por conjuntos. Las tres cachés comparten interfaz, memoria principal
+y una traza de 20 accesos con un patrón de thrashing, de modo que la
+comparación es justa. Las simulaciones se ejecutan con GHDL y las
+ondas se inspeccionan con GTKWave. En la traza común la caché directa
+alcanza 35\,\% de aciertos, la por conjuntos 50\,\% y la asociativa
+total 65\,\%, resultados coherentes con el coste y la complejidad de
+cada mapeo.
+\end{abstract}
+
+\noindent\textbf{Palabras Clave:} Memoria caché, Mapeo directo,
+Asociativo por conjuntos, VHDL, GHDL, Simulación
+
+% ============================================================
+% 1. INTRODUCCIÓN  (1–2 cuartillas)
+% ============================================================
+\section{Introducción}
+\label{sec:intro}
+
+La memoria principal es mucho más lenta que el procesador: cerrar una
+brecha de este tipo es el motivo de existir de la jerarquía de
+memoria, y la caché es su primer y más efectivo nivel
+\cite{stallings2019,hennessy2019,tanenbaum2013}. Una caché aprovecha
+los principios de localidad temporal y espacial \cite{wikipedia-locality}
+para guardar en un almacenamiento
+rápido y pequeño una copia de los bloques que el procesador usa con
+más frecuencia \cite{patterson2017,bryant2015}.
+
+Cuando se diseña una caché hay que decidir, para cada bloque de la
+memoria principal, qué línea de la caché puede alojarlo. Esa decisión
+es la \emph{función de mapeo}, y existen tres básicos: mapeo directo
+(\emph{direct mapping}), mapeo asociativo total (\emph{associative
+mapping}) y mapeo asociativo por conjuntos (\emph{set-associative
+mapping})
+\cite{stallings2019,wikipedia-cache,null2024}. Cada uno compromete
+distinto hardware de comparación y distinta flexibilidad de
+reemplazo, de modo que ninguna opción es \emph{a priori} mejor que
+las otras: dependen del patrón de accesos.
+
+Este trabajo construye y compara las tres funciones de mapeo en el
+mismo entorno de simulación. Las tres cachés están descritas en
+VHDL-2008~\cite{ieee1076}, se simulan con GHDL~\cite{ghdl-docs} y sus ondas
+se
+inspeccionan con GTKWave~\cite{gtkwave-docs}. Para que la comparación
+sea justa, los tres módulos exponen \emph{la misma interfaz}, leen de
+\emph{la misma memoria principal de comportamiento} y ejecutan
+\emph{la misma traza de accesos}, que incluye un patrón de
+\emph{thrashing} típico del mapeo directo. El objetivo es doble:
+(i) comprobar por simulación el comportamiento teórico de cada
+mapeo, y (ii) cuantificar sus diferencias en aciertos y fallos sobre
+una carga común.
+
+Desde el punto de vista didáctico conviene aclarar la terminología. El
+equipo denomina a los tres métodos ``directo'', ``asociativo'' y
+``asociativo por conjuntos'', siguiendo la descripción de funcionamiento
+del laboratorio (búsqueda lineal de instrucciones, uso de etiquetas
+con comparación en paralelo y división en conjuntos); en la
+bibliografía se usa la terminología estándar de Stallings, que es la
+que se emplea en el resto del artículo \cite{stallings2019}.
+
+El artículo se estructura como sigue. La sección~\ref{sec:diseno}
+describe las tres funciones de mapeo y los módulos VHDL. La
+sección~\ref{sec:propuesta} presenta la metodología experimental. La
+sección~\ref{sec:simulaciones} muestra las capturas de las
+simulaciones, la sección~\ref{sec:resultados} analiza los resultados
+cuantitativos y la sección~\ref{sec:conclusiones} concluye y señala
+trabajos futuros.
+
+% ============================================================
+% 2. DISEÑO TEÓRICO  (3–5 cuartillas)
+% ============================================================
+\section{Diseño Teórico}
+\label{sec:diseno}
+
+\subsection{Contexto: memoria caché y bloques}
+
+Una caché organiza la memoria principal en \emph{bloques} (o
+líneas) de varios bytes y guarda esos bloques en sus \emph{líneas}.
+En este trabajo se reproducen a escala reducida los parámetros del
+Ejemplo 5.1 del capítulo 5 de Stallings \cite{stallings2019} (caché de
+64\,kB, memoria principal de 16\,MB y bloques de 4 bytes):
+direccionamiento a nivel de byte
+con direcciones de 10 bits, palabra y bloque de 4 bytes (por tanto 2
+bits de offset), memoria principal de 1\,KiB (256 bloques) y caché de
+64\,B (16 líneas). La Tabla~\ref{tab:par} recoge los parámetros y el
+reparto de bits de la dirección de cada mapeo.
+
+\begin{table}[t]
+\centering
+\caption{Parámetros comunes y reparto de la dirección (10 bits).}
+\label{tab:par}
+\small
+\begin{tabular}{llll}
+\hline\noalign{\smallskip}
+Parámetro & Valor & Mapeo & Reparto de bits\\
+\noalign{\smallskip}\hline\noalign{\smallskip}
+Dirección & 10 bits (byte) & Directo & tag(4) $\vert$ índice(4) $\vert$ offset(2)\\
+Palabra/bloque & 4 bytes & Asociativo & tag(8) $\vert$ offset(2)\\
+Mem. principal & 1\,KiB (256 bloques) & Conjuntos & tag(5) $\vert$ conjunto(3) $\vert$ offset(2)\\
+Caché & 64\,B (16 líneas) & & \\
+\noalign{\smallskip}\hline
+\end{tabular}
+\end{table}
+
+El papel de la caché se entiende dentro de la jerarquía de memoria:
+cuanto más cerca del procesador, los almacenamientos son más rápidos y
+más pequeños, y más lentos y grandes al alejarse
+\cite{tanenbaum2013,hamacher2002,wikipedia-locality}. La caché es el primer nivel
+de esa jerarquía y vive de los principios de localidad temporal y
+espacial \cite{wikipedia-locality,stallings2019,smith1982}: un programa vuelve
+a usar pronto los mismos datos y usa datos que guardan relación entre
+sí. Para que la localidad espacial rinda, el bloque debería contener
+varias palabras consecutivas; aquí el bloque es de una sola palabra
+(4 bytes), una simplificación deliberada que aísla el efecto del
+mapeo y que se discute en la sección~\ref{sec:resultados}.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.85\textwidth]{figuras/reparto_direccion.png}
+  \caption{Reparto de la dirección de 10 bits en los tres mapeos: la
+    etiqueta se guarda, el índice o el conjunto sitúa la línea y el
+    offset elige el byte dentro del bloque.}
+  \label{fig:reparto}
+\end{figure}
+
+La Fig.~\ref{fig:reparto} ilustra el reparto de los bits: al crecer
+la asociatividad, los bits de índice pasan a formar parte de la
+etiqueta, y por eso hay que comparar más etiquetas en cada acceso.
+
+\subsection{Mapeo directo}
+
+En el mapeo directo cada bloque solo puede ocupar una única línea de
+la caché: la línea $i$ del bloque se calcula como $i = j \bmod m$,
+donde $j$ es el número de bloque en memoria y $m$ el número de líneas
+de la caché \cite{stallings2019,wikipedia-cpu-cache}. En nuestro caso $m=16$, así
+que el índice son los 4 bits intermedios de la dirección y los 4 bits
+superiores quedan como etiqueta (\emph{tag}) que debe guardarse y
+compararse. La búsqueda consiste en un único comparador de 4 bits
+sobre la línea seleccionada por el índice, por lo que es el mapeo más
+barato y rápido: no hay que recorrer la caché ni decidir víctima.
+
+Su inconveniente es estructural: dos bloques con el mismo índice
+interfieren siempre, y si un programa alterna accesos a dos bloques
+que comparten índice, cada acceso es un fallo: es el fenómeno de
+\emph{thrashing}
+\cite{stallings2019,wikipedia-cache,wikipedia-metrics}. La traza de
+este trabajo está diseñada para provocarlo con las palabras 0, 16 y
+32, que comparten índice.
+
+\subsection{Mapeo asociativo total}
+
+En el mapeo asociativo total cualquier bloque puede ocupar
+cualquiera de las líneas \cite{stallings2019}. La dirección se
+divide solo en etiqueta (8 bits) y offset, y la caché guarda la
+etiqueta de cada línea: en el ciclo de comparación se comparan
+\emph{en paralelo} las 16 etiquetas con la solicitada. Esto requiere
+16 comparadores de 8 bits y una red de selección (la estructura
+clásica es una memoria de contenido o \emph{CAM}, \emph{content
+addressable memory}) \cite{stallings2019,hennessy2019}. El
+inconveniente es el coste y la potencia de los comparadores en
+paralelo; la ventaja es que un bloque nunca expulsa a otro por
+colisión de índice: solo sale de la caché cuando hace falta espacio y
+se elige una víctima con una política de reemplazo, aquí LRU
+(\emph{least recently used}) \cite{stallings2019}.
+
+\subsection{Mapeo asociativo por conjuntos}
+
+El mapeo por conjuntos es el punto intermedio \cite{stallings2019}.
+La caché se divide en conjuntos de $k$ líneas (\emph{$k$-way
+set-associative}), y un bloque solo puede ocupar cualquiera de las
+$k$ líneas de \emph{su} conjunto; dentro del conjunto la elección es
+libre. Con $k=1$ se obtiene el mapeo directo y con $k=m$ el asociativo
+total \cite{stallings2019,patterson2017}. En nuestro caso hay 8
+conjuntos de 2 vías, de modo que la dirección se reparte en etiqueta
+(5 bits), conjunto (3 bits) y offset, y solo hacen falta 2
+comparadores de 5 bits por acceso. El reemplazo es LRU con 1 bit por
+conjunto \cite{wikipedia-cpu-cache}: se recuerda cuál de las dos vías se usó
+más recientemente y la víctima es la otra.
+
+\subsection{Reemplazo LRU}
+
+Las cachés asociativas necesitan una política de reemplazo. Se ha
+elegido LRU, que descarta el bloque hace más tiempo sin usar y que
+aprovecha mejor la localidad temporal que políticas aleatorias o FIFO
+\cite{stallings2019,hennessy2019,wikipedia-replacement}. La caché totalmente
+asociativa
+implementa LRU exacto con un contador de antigüedad por línea (0 =
+más reciente), y la por conjuntos implementa LRU exacto con 1 bit por
+conjunto al tener solo dos vías. En un diseño real el LRU exacto de
+16 vías no es barato y se sustituye por aproximaciones
+\cite{hennessy2019}; aquí se justifica por tratarse de un modelo de
+simulación de tamaño reducido. Las alternativas a LRU son bien
+conocidas: aleatorio, FIFO o aproximaciones como pseudo-LRU, que
+apenas pierden tasa de aciertos y ahorran coste
+\cite{hennessy2019,wikipedia-replacement}. Aquí solo hacen falta dos
+variantes baratas: un contador de antigüedad por línea en la
+totalmente asociativa y un bit por conjunto en la por conjuntos, que
+con dos vías equivale a LRU exacto \cite{wikipedia-cpu-cache}. Conviene
+recordar, además, por qué no se usa FIFO: su sustituto óptimo puede
+empeorar al añadir marcos, la conocida anomalía de Belady
+\cite{belady1969}.
+
+\subsection{Funcionamiento de una consulta}
+
+Los tres cachés comparten interfaz y máquina de estados, de modo que
+una consulta recorre los mismos pasos en los tres; solo cambia cómo
+se busca y se compara la etiqueta.
+
+\textbf{Acierto.} El banco de prueba pone la dirección en
+\texttt{addr} y activa \texttt{req}. En el flanco siguiente la
+máquina sale de \texttt{IDLE} y entra en \texttt{COMPARE}: se extraen
+los campos de la dirección y se comparan la etiqueta (o las
+etiquetas) con la de la línea seleccionada; con coincidencia,
+\texttt{hit} se activa y el dato de la línea queda disponible. El
+flanco siguiente la máquina pasa a \texttt{DONE}, donde se levanta
+\texttt{ready}; el banco toma \texttt{data} y baja \texttt{req}. Un
+acierto ocupa tres ciclos de reloj.
+
+\textbf{Fallo.} El comienzo es idéntico, pero sin coincidencia
+\texttt{hit} permanece baja y la máquina avanza a
+\texttt{FETCH\_MEM}: la caché emite la dirección del bloque por
+\texttt{mem\_addr} y activa \texttt{mem\_req}. La memoria principal,
+de latencia de un ciclo, responde con \texttt{mem\_ready} y el dato;
+entonces la caché guarda el bloque en su línea, la marca como válida,
+actualiza su política de reemplazo y pasa a \texttt{DONE}, donde
+\texttt{ready} entrega el dato solicitado. El paso por
+\texttt{FETCH\_MEM} y la espera a la memoria alargan el fallo hasta
+seis ciclos. La sección~\ref{sec:resultados} mide ambas latencias
+sobre los ficheros~VCD.
+
+\subsection{Coste de cada mapeo}
+
+El coste de un mapeo se concentra en comparar etiquetas y en decidir
+víctimas. La Tabla~\ref{tab:coste} resume lo que implica cada uno
+para la caché de este trabajo.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{@{}lrrr@{}}
+\hline\noalign{\smallskip}
+Mapeo & Comparadores & Reemplazo & Selección \\
+\noalign{\smallskip}\hline\noalign{\smallskip}
+Directo & 1 $\times$ 4 bits & ninguno & por índice \\
+Asociativo total & 16 $\times$ 8 bits & contador de 4 bits & mux 16 a 1 \\
+Por conjuntos & 2 $\times$ 5 bits & 1 bit por conjunto & mux 2 a 1 \\
+\noalign{\smallskip}\hline
+\end{tabular}
+\caption{Coste de la comparación de etiquetas y del reemplazo en cada mapeo.}
+\label{tab:coste}
+\end{table}
+
+El directo no tiene red de selección ni política que decidir; el
+total concentra su coste en los 16 comparadores y en buscar la
+víctima entre las 16 líneas; y el por conjuntos obtiene la mayor
+parte del efecto del total con dos comparadores por acceso
+\cite{hennessy2019,wikipedia-cpu-cache}. Cada salto de asociatividad
+compra aciertos con hardware de comparación:
+Tabla~\ref{tab:resultados} muestra lo que cuesta cada paso en la
+traza de este trabajo.
+
+\subsection{Decisiones de diseño y módulos VHDL}
+
+Las decisiones de diseño, todas ellas dirigidas a que la comparación
+sea justa, son:
+\begin{itemize}
+  \item \textbf{Misma interfaz.} Los tres cachés exponen los mismos
+    puertos (\texttt{clk}, \texttt{rst}, \texttt{addr}, \texttt{req},
+    \texttt{ready}, \texttt{data}, \texttt{hit}, \texttt{estado} y la
+    interface de memoria \texttt{mem\_addr}, \texttt{mem\_req},
+    \texttt{mem\_data}, \texttt{mem\_ready}), de modo que el banco de
+    pruebas y la memoria son intercambiables.
+  \item \textbf{Solo lectura.} Se modela el \emph{fetch} de
+    instrucciones: no hay bit sucio (\emph{dirty}) ni política de
+    escritura \cite{wikipedia-cache-computing}, que queda como trabajo
+    futuro (sección~\ref{sec:conclusiones}).
+  \item \textbf{Máquina de estados común.}
+    $\texttt{IDLE} \rightarrow \texttt{COMPARE} \rightarrow
+    (\texttt{FETCH\_MEM} \rightarrow \texttt{DONE}) \mid
+    \texttt{DONE}$: se compara, y solo en caso de fallo se pide el
+    bloque a la memoria principal, que tiene una latencia de 1 ciclo
+    (modelo de comportamiento).
+  \item \textbf{Misma memoria principal.} RAM de comportamiento de
+    1\,KiB inicializable con un patrón determinista, compartida por
+    los bancos de prueba.
+\end{itemize}
+
+Los módulos de \texttt{vhdl/mapeo-memoria/src/} son
+\texttt{memoria\_principal} (RAM de 256 palabras de 32 bits con
+latencia de 1 ciclo y puerto de escritura para los bancos de prueba),
+\texttt{cache\_directo} (1 comparador de 4 bits, sin reemplazo),
+\texttt{cache\_asociativa} (16 comparadores de 8 bits en paralelo,
+contadores LRU) y \texttt{cache\_conjuntos} (2 comparadores de 5
+bits, LRU de 1 bit por conjunto). El código completo está en el
+apéndice.
+
+% ============================================================
+% 3. PROPUESTA EXPERIMENTAL  (1 hoja)
+% ============================================================
+\section{Propuesta Experimental}
+\label{sec:propuesta}
+
+\subsection{Entorno de simulación}
+
+Las descripciones están escritas en VHDL-2008~\cite{ieee1076}, con el
+paquete estándar \texttt{std\_logic\_1164}~\cite{ieee1164} que define el
+tipo lógico multivalor de todos los puertos y señales, y siguen la
+metodología de modelado y bancos de prueba de la bibliografía de
+referencia~\cite{harris2008}. Se verifican por simulación funcional con GHDL~\cite{ghdl-docs}, un
+simulador libre y multiplataforma que se emplea en tres
+fases~\cite{ghdl-invoking}: \emph{análisis} (\texttt{-a}) del código
+fuente, \emph{elaboración} (\texttt{-e}) del diseño y \emph{ejecución}
+(\texttt{-r}) del banco de prueba. Durante la ejecución puede volcarse
+el valor de todas las señales en un fichero~VCD~\cite{ghdl-simulation},
+que después se inspecciona con GTKWave~\cite{gtkwave-docs}. En este
+trabajo la cadena se ejecuta siempre mediante los \emph{wrappers} del
+repositorio, que fijan las opciones de compilación (VHDL-2008,
+biblioteca de trabajo y rutas de salida):
+
+\begin{lstlisting}[style=shell]
+scripts/vhdl-analizar mapeo-memoria
+scripts/vhdl-sim     mapeo-memoria tb_cache_directo
+scripts/vhdl-wave    vhdl/mapeo-memoria/salidas/tb_cache_directo.vcd
+\end{lstlisting}
+
+\subsection{Bancos de prueba}
+
+La unidad se verifica con cinco bancos de prueba, todos con
+\emph{autochequeo}: cada comprobación es un \texttt{assert} que, si no
+se cumple, detiene la simulación con \texttt{severity failure} y
+describe el problema, y al finalizar cada banco se emite un
+\texttt{report} de éxito del tipo
+\texttt{"tb\_cache\_directo:\ OK"}. GHDL devuelve un código de salida
+distinto de cero cuando un aserto falla, de modo que la integración
+continua del repositorio (que analiza y simula los cinco bancos en
+cada \emph{pull request}) detecta cualquier regresión.
+Tabla~\ref{tab:bancos} resume qué comprueba cada uno.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{@{}ll@{}}
+\hline
+\noalign{\smallskip}
+Banco de prueba & Qué verifica \\
+\noalign{\smallskip}\hline\noalign{\smallskip}
+\texttt{tb\_memoria\_principal} & patrón de fábrica, puerto de \\
+ & escritura y palabras vecinas \\
+\texttt{tb\_cache\_directo} & dato y acierto/fallo por acceso; \\
+ & totales 7 aciertos / 13 fallos \\
+\texttt{tb\_cache\_asociativa} & ídem; totales 13 aciertos / 7 fallos \\
+\texttt{tb\_cache\_conjuntos} & ídem; totales 10 aciertos / 10 fallos \\
+\texttt{tb\_comparacion\_mapeos} & los tres mapeos sobre una \\
+ & memoria compartida; tabla comparativa \\
+\noalign{\smallskip}\hline
+\end{tabular}
+\caption{Bancos de prueba de la unidad \texttt{mapeo-memoria}.}
+\label{tab:bancos}
+\end{table}
+
+Los tres bancos de caché ejecutan la misma traza, y el cuarto
+banco (\texttt{tb\_\allowbreak comparacion\_\allowbreak mapeos})
+instancia las tres cachés sobre una
+\emph{única} memoria de comportamiento, compartida mediante un
+arbitraje \emph{round-robin} registrado (una concesión por ciclo), de
+modo que las diferencias observadas se deben solo al mapeo y no al
+modelo de memoria.
+
+\subsection{Traza común y métricas}
+
+La traza tiene 20 accesos y combina localidad temporal y espacial con
+un patrón deliberado de \emph{thrashing}: las palabras 0, 16 y 32
+(direcciones byte 0, 64 y 128) compiten por la misma línea en el mapeo
+directo y por el mismo conjunto en el mapeo por conjuntos. Cada acceso
+se contrasta con el resultado teórico: el dato devuelto debe coincidir
+con el patrón de fábrica de la memoria (palabra $i = 3i+7$) y el
+acierto o fallo debe coincidir con el patrón esperado del banco. La
+métrica de referencia es la tasa de aciertos $h$, calculada como el
+número de aciertos dividido entre 20, y, por complemento, la tasa de
+fallos $1-h$.
+
+Conviene acotar el alcance de la comparación: es \emph{funcional}, en
+el sentido de que compara aciertos y fallos sobre la misma traza y el
+mismo modelo de memoria, de latencia de un ciclo. No se mide el
+tiempo de ejecución en un procesador real y no se contempla síntesis:
+GHDL se usa como simulador, y la verificación sigue el flujo habitual
+del proyecto (análisis, elaboración, ejecución y revisión de ondas).
+
+% ============================================================
+% 4. SIMULACIONES DE VHDL  (capturas de los módulos más importantes)
+% ============================================================
+\section{Simulaciones de VHDL}
+\label{sec:simulaciones}
+
+Los cinco bancos terminan con su mensaje de \texttt{OK} sin disparar
+ninguna aserción (Tabla~\ref{tab:bancos}). Las figuras son capturas de
+GTKWave sobre los ficheros~VCD de \texttt{vhdl/mapeo-memoria/salidas/},
+con la traza completa a la vista (0~ns hasta el final de la simulación).
+Cada captura expone las filas del banco: \texttt{clk}, \texttt{rst},
+el contador de \texttt{ciclo}, el estímulo (\texttt{addr}, \texttt{req}),
+la respuesta (\texttt{ready}, \texttt{hit}, \texttt{data}, \texttt{estado})
+y los contadores de aciertos y fallos
+(\texttt{caches\_\allowbreak hits}, \texttt{caches\_\allowbreak misses}),
+con los vectores en hexadecimal y los contadores en decimal.
+
+\begin{figure}[!t]
+  \centering
+  \includegraphics[width=0.82\textwidth]{figuras/captura_memoria_principal.png}
+  \caption{Memoria principal (\texttt{tb\_memoria\_principal}): patrón
+    de fábrica y dos escrituras verificadas.}
+  \label{fig:cap-memoria}
+\end{figure}
+
+\textbf{Memoria principal.} La Fig.~\ref{fig:cap-memoria} muestra las
+cuatro lecturas iniciales del patrón de fábrica (palabras 0, 1, 16 y
+255) y las dos escrituras: \texttt{A5A5F00F} sobre la dirección 20 y
+\texttt{000000AA} sobre la 64. Tras cada escritura \texttt{wr\_en}
+pulsa un ciclo, el banco relee esa dirección y después una palabra
+vecina (0 y 4), que debe quedar intacta.
+
+\begin{figure}[!t]
+  \centering
+  \includegraphics[width=0.82\textwidth]{figuras/captura_cache_directo.png}
+  \caption{Mapeo directo (\texttt{tb\_cache\_directo}): traza completa,
+    FSM y contadores de aciertos y fallos.}
+  \label{fig:cap-directo}
+\end{figure}
+
+\textbf{Mapeo directo.} En la Fig.~\ref{fig:cap-directo} las
+direcciones 0, 64 y 128 (palabras 0, 16 y 32) compiten por la línea de
+índice 0 y \texttt{hit} queda bajo cuando ésta no contiene la palabra
+buscada: a lo largo de la traza \texttt{hit} solo pulsa 7 veces. La fila
+\texttt{estado} recorre la FSM y en cada fallo se interna en
+\texttt{FETCH\_MEM} (código 2), donde \texttt{mem\_req} pide el bloque a
+la memoria. Los contadores escalonados acaban en 7 aciertos
+(\texttt{0007} en hexadecimal) y 13 fallos (\texttt{000D}).
+
+\begin{figure}[!t]
+  \centering
+  \includegraphics[width=0.82\textwidth]{figuras/captura_cache_asociativa.png}
+  \caption{Asociativa total (\texttt{tb\_cache\_asociativa}): 7 fallos
+    obligatorios y 13 aciertos.}
+  \label{fig:cap-asociativa}
+\end{figure}
+
+\textbf{Mapeo asociativo total.} La Fig.~\ref{fig:cap-asociativa}
+repite la traza sobre las 16 líneas totalmente asociativas: solo
+aparecen los 7 fallos obligatorios de la primera visita a cada
+dirección. En la fila \texttt{estado} esos fallos iniciales se
+internan en \texttt{FETCH\_MEM}, pero a partir del acceso 5 la FSM
+salta directo de \texttt{COMPARE} a \texttt{DONE}; el contador
+\texttt{caches\_\allowbreak misses} se congela en 7 (\texttt{0007}) y
+\texttt{caches\_\allowbreak hits} sube hasta 13 (\texttt{000D}). El
+patrón de \emph{thrashing} del mapeo directo no aparece aquí: al no
+haber conflicto de índice, las palabras 0, 16 y 32 conviven en
+líneas distintas.
+
+\begin{figure}[!t]
+  \centering
+  \includegraphics[width=0.82\textwidth]{figuras/captura_cache_conjuntos.png}
+  \caption{Por conjuntos (\texttt{tb\_cache\_conjuntos}): 8 conjuntos
+    de 2 vías y fallos de conflicto en el conjunto 0.}
+  \label{fig:cap-conjuntos}
+\end{figure}
+
+\textbf{Mapeo asociativo por conjuntos.} La
+Fig.~\ref{fig:cap-conjuntos} usa 8 conjuntos de 2 vías: a los 7 fallos
+obligatorios se suman 3 de conflicto (accesos 17--19), todos en el
+conjunto 0, donde compiten las palabras 0, 16 y 32; con solo dos vías
+la expulsión la decide la política LRU descrita en la
+sección~\ref{sec:diseno}. La fila \texttt{estado} distingue ambos
+casos y, en cada fallo, la interfaz con la memoria se hace visible:
+\texttt{mem\_req} pulsa una vez y \texttt{mem\_addr} presenta el bloque
+alineado (\texttt{044}, \texttt{080} o \texttt{00C} en los fallos de
+conflicto). Totales: 10 aciertos y 10 fallos
+(\texttt{000A}/\texttt{000A} en los contadores).
+
+\begin{figure}[!t]
+  \centering
+  \includegraphics[width=0.82\textwidth]{figuras/captura_comparacion_mapeos.png}
+  \caption{Los tres mapeos sobre una memoria compartida: aciertos,
+    fallos e interfaz de memoria.}
+  \label{fig:cap-comparacion}
+\end{figure}
+
+\textbf{Comparación en paralelo.} Por último,
+Fig.~\ref{fig:cap-comparacion}, el banco
+\texttt{tb\_comparacion\_\allowbreak mapeos} superpone sobre una única
+memoria compartida las tres señales de acierto y los seis contadores,
+agrupados por mapeo: \texttt{hit\_asociativa} frecuente,
+\texttt{hit\_conjuntos} intermedia y \texttt{hit\_directo} escasa.
+Debajo aparece la memoria compartida (\texttt{mem\_addr},
+\texttt{mem\_req}, \texttt{mem\_ready} y \texttt{mem\_data}), atendida
+por el arbitraje \emph{round-robin} descrito en la
+sección~\ref{sec:propuesta} (las filas \texttt{grant\_s} y
+\texttt{prev\_s} registran la concesión del árbitro). Los totales,
+7/13, 10/10 y 13/7, coinciden con la Tabla~\ref{tab:bancos}.
+
+% ============================================================
+% 5. RESULTADOS  (3–5 cuartillas)
+% ============================================================
+\section{Resultados}
+\label{sec:resultados}
+
+Esta sección analiza las métricas que los cinco bancos verifican en cada
+ejecución. Los recuentos de aciertos y fallos proceden de la salida de
+\texttt{tb\_comparacion\_\allowbreak mapeos}, que ejecuta los tres
+mapeos sobre la
+misma traza y una misma memoria de comportamiento, y las latencias de
+acceso se miden sobre los ficheros~VCD de la
+sección~\ref{sec:simulaciones}. Se usa la terminología habitual: ratio
+de aciertos $h$ (aciertos divididos entre accesos) y tasa de fallos
+$1-h$ \cite{tanenbaum2013,null2024}.
+
+\subsection{Métricas globales de la traza}
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{@{}lrrrr@{}}
+\hline
+\noalign{\smallskip}
+Métrica & Directo & Por conjuntos & Total \\ 
+\noalign{\smallskip}\hline\noalign{\smallskip}
+Aciertos (de 20) & 7 & 10 & 13 \\
+Fallos & 13 & 10 & 7 \\
+Tasa de aciertos & 35\,\% & 50\,\% & 65\,\% \\
+Fallos obligatorios & 7 & 7 & 7 \\
+Fallos de conflicto & 6 & 3 & 0 \\
+Fin de la simulación (ns) & 1415 & 1325 & 1235 \\
+\noalign{\smallskip}\hline
+\end{tabular}
+\caption{Resultados sobre la traza común de 20 accesos (salida de
+\texttt{tb\_comparacion\_mapeos} y fin de simulación de cada banco).}
+\label{tab:resultados}
+\end{table}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.78\textwidth]{figuras/grafico_aciertos_fallos.png}
+  \caption{Composición de los 20 accesos de la traza en cada mapeo:
+    aciertos y fallos con su tasa.}
+  \label{fig:tasas}
+\end{figure}
+
+Sobre los mismos 20 accesos, el mapeo directo resuelve 7 aciertos y 13
+fallos (35\,\%), el por conjuntos 10 y 10 (50\,\%) y el total 13 y 7
+(65\,\%), como recogen la Tabla~\ref{tab:resultados} y la
+Fig.~\ref{fig:tasas}. El orden coincide con el que predicen los tres
+esquemas de mapeo \cite{stallings2019,null2024}: al pasar de una línea
+fija por bloque a dos vías por conjunto y de ahí a 16 líneas libres,
+los accesos que colisionaban dejan de hacerlo. La comparación es justa
+porque los tres mapeos comparten la misma memoria y el mismo arbitraje
+\emph{round-robin} (sección~\ref{sec:propuesta}), de modo que las
+diferencias proceden solo del reparto de direcciones \cite{patterson2017}.
+
+Los números no dependen de la inspección manual de las ondas: cada dato
+leído y cada resultado acierto/fallo se contrasta con un \texttt{assert}
+dentro de la simulación, y los totales de la tabla se verifican al
+final de la ejecución (sección~\ref{sec:propuesta}), de modo que un
+cambio de diseño que altere un solo acierto detiene la simulación.
+
+\subsection{Clasificación de los fallos}
+\label{sub:3c}
+
+Los tres mapeos comparten los mismos 7 fallos obligatorios: son las
+primeras visitas a los siete bloques distintos que toca la traza (las
+palabras 0, 1, 2, 3, 16, 17 y 32) y ninguna caché puede resolverlas sin
+cargar antes el bloque \cite{wikipedia-metrics,wikipedia-cache}. Tampoco
+hay fallos de capacidad, porque el conjunto de trabajo (7 bloques de
+4~B) cabe con holgura en las 16 líneas de 4~B de la caché
+\cite{wikipedia-metrics,denning1968}. Por tanto, la diferencia observada
+--6, 3 y 0-- son fallos de conflicto: los que aparecen cuando un bloque
+legítimo no encuentra línea libre en su índice o en su conjunto
+\cite{wikipedia-metrics,stallings2019}. La Tabla~\ref{tab:resultados}
+desglosa los tres tipos, y su reparto explica por sí solo la tabla de
+acierto: los tres tipos suman siempre los 13, 10 y 7 fallos medidos.
+
+\subsection{Thrashing bajo control}
+
+En el mapeo directo cada bloque solo puede ocupar su línea
+$I = B \bmod 16$ \cite{stallings2019,wikipedia-cpu-cache}, y ahí se
+concentra el daño: las palabras 0, 16 y 32 (índice 0) y las 1 y 17
+(índice 1) compiten por una sola línea. Cinco de los seis fallos de
+conflicto del directo pertenecen al primer grupo (los accesos 5, 12,
+17, 18 y 19 de la traza) y el restante al segundo (acceso 10): cada
+lectura expulsa a la anterior, que volverá a fallar cuando se pida de
+nuevo. Es el patrón de \emph{thrashing} que Stallings ilustra tras la
+Fig.~5.8 de su cap.~5 \cite{stallings2019} y que la clasificación de 3C
+asocia a los fallos de conflicto \cite{wikipedia-metrics}; el marco del
+conjunto de trabajo formaliza por qué alternar entre conjuntos disjuntos
+desborda la caché \cite{denning1968,denning1972}; es también el
+punto en que la caché deja de compensar \cite{null2024}.
+
+El por conjuntos contiene el daño porque el conjunto 0 tiene dos vías:
+solo tres accesos (los 17--19) no encuentran sitio y el bit de LRU
+decide cuál de las dos palabras sale \cite{wikipedia-cpu-cache,hennessy2019}.
+La asociativa total no lo sufre: con 16 líneas libres, cualquier palabra
+encuentra hueco \cite{stallings2019}.
+
+El resultado depende de la traza, y conviene decirlo. Si esta
+alternara de forma exclusiva las palabras 0, 16 y 32, el mapeo directo
+no acertaría ningún acceso tras los obligatorios y el por conjuntos
+tampoco (tres palabras para dos vías con LRU es la secuencia clásica
+que agota el reemplazo), mientras que la asociativa total mantendría las
+tres residentes y solo pagaría sus tres primeros fallos. La traza real
+intercala el resto de direcciones y por eso las tasas se quedan en
+35--65\,\% en lugar de colapsar.
+
+\subsection{Latencia de acceso y tiempo medio}
+
+Los VCD permiten medir el tiempo que va desde que el banco emite
+\texttt{req} hasta que \texttt{ready} valida el dato: 30~ns (3 ciclos
+de reloj de 10~ns) cuando hay acierto y 60~ns (6 ciclos) cuando hay
+fallo, valores idénticos en los tres mapeos porque comparten la misma
+máquina de estados. La penalización de fallo es, por tanto,
+$P = 30$~ns. Con el ratio $h$ de cada mapeo, el tiempo medio de acceso
+queda
+\[
+  \mathrm{AMAT} \;=\; T_a + (1-h)\cdot P \,,
+\]
+con $T_a$ el tiempo de acierto; es la misma estructura que el tiempo
+medio $c + (1-h)\cdot m$ de Tanenbaum y Austin \cite{tanenbaum2013} y
+que los modelos de rendimiento de Stallings \cite{stallings2019} y de
+Null y Lobur \cite{null2024}.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{@{}lrrrr@{}}
+\hline
+\noalign{\smallskip}
+ & $h$ & $1-h$ & $(1-h)\cdot P$ (ns) & AMAT (ns) \\
+\noalign{\smallskip}\hline\noalign{\smallskip}
+Directo & 0,35 & 0,65 & 19,5 & 49,5 \\
+Por conjuntos & 0,50 & 0,50 & 15,0 & 45,0 \\
+Total & 0,65 & 0,35 & 10,5 & 40,5 \\
+\noalign{\smallskip}\hline
+\end{tabular}
+\caption{Tiempo medio de acceso por mapeo con $T_a = 30$~ns y
+penalización de fallo $P = 30$~ns, medidos sobre los VCD.}
+\label{tab:amat}
+\end{table}
+
+Con $T_a = 30$~ns, la Tabla~\ref{tab:amat} muestra que la asociativa
+total ahorra 9~ns por acceso respecto a la directa (40,5 frente a
+49,5~ns: cada acceso tarda un 22\,\% más en el mapeo directo) y que el
+por conjuntos se queda a mitad de camino. Las duraciones de las tres
+simulaciones confirman la cuenta: la parte fija del banco (arranque y
+huecos entre accesos) es de 425~ns en los tres casos, de modo que
+$425 + 20 \times \mathrm{AMAT}$ reproduce exactamente los 1415, 1325 y
+1235~ns medidos en la Tabla~\ref{tab:resultados}.
+
+Conviene matizar que $T_a$ es igual para los tres por decisión de
+diseño: se comparan implementaciones funcionales, no silicio
+(sección~\ref{sec:propuesta}). En hardware real, resolver un acierto
+en la asociativa total exige comparar las 16 etiquetas en paralelo, con
+más área y más energía que el único comparador del mapeo directo
+\cite{hennessy2019,wikipedia-cpu-cache}; y como el AMAT tiende a $T_a$
+cuando $h$ se acerca a 1, a partir de cierto punto añadir
+asociatividad deja de rentabilizarse \cite{hennessy2019}.
+
+Como ejercicio de sensibilidad, si la penalización de fallo fuera de
+100~ns en lugar de 30~ns, el AMAT sería de 95, 80 y 65~ns: el mapeo
+directo tardaría un 46\,\% más por acceso que el total, frente al
+22\,\% del modelo de un ciclo. El orden no cambia, pero sí el valor en
+juego: cuanto más cara es la memoria, más pesa la tasa de fallos y más
+se justifica invertir en asociatividad \cite{hennessy2019}.
+
+\subsection{Del tipo de fallo al tiempo de simulación}
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{@{}lrrrr@{}}
+\hline
+\noalign{\smallskip}
+ & Todo acierto & Obligatorios & Conflicto & Total \\
+ & (ns) & (+ns) & (+ns) & (ns) \\
+\noalign{\smallskip}\hline\noalign{\smallskip}
+Directo & 1025 & 210 & 180 & 1415 \\
+Por conjuntos & 1025 & 210 & 90 & 1325 \\
+Total & 1025 & 210 & 0 & 1235 \\
+\noalign{\smallskip}\hline
+\end{tabular}
+\caption{Tiempo de simulación desglosado por tipo de fallo (parte fija
+de 425~ns más 600~ns si los 20 accesos acertaran todos).}
+\label{tab:desglose}
+\end{table}
+
+La Tabla~\ref{tab:desglose} lleva la clasificación de la
+sección~\ref{sub:3c} al tiempo: si los 20 accesos hubieran acertado,
+cada simulación habría durado 1025~ns (425~ns de arranque y huecos del
+banco, más 600~ns de 20 aciertos de 30~ns). A esa base, los 7 fallos
+obligatorios suman 210~ns en los tres mapeos, por igual, y los de
+conflicto añaden 180, 90 y 0~ns. Las columnas cuadran con los 1415,
+1325 y 1235~ns medidos: todo lo que una simulación tarda de más que
+otra procede de los fallos de conflicto que su reparto de direcciones
+provoca.
+
+\subsection{Alcance de la comparación}
+
+Los números describen esta traza y estos parámetros, no un rendimiento
+global: la traza se diseñó con localidad temporal y espacial y con un
+patrón deliberado de conflictos (sección~\ref{sec:propuesta}), la caché
+es de 64~B y la memoria de 1~KB, y no aparecen fallos de capacidad
+porque el conjunto de trabajo es pequeño. Con una traza más larga y
+variada, la componente de capacidad crecería y también penalizaría a la
+asociativa total \cite{bryant2015,patterson2017}. A ello se suma que
+todo el flujo es simulación funcional con GHDL, sin síntesis
+\cite{ghdl-docs}: los tiempos de esta sección son de simulación y de
+un modelo de memoria de un ciclo, no de un procesador real.
+
+A esto se suma que los parámetros elegidos condicionan el resultado: el
+bloque es de una sola palabra (4~B), de modo que cuatro palabras
+contiguas ocupan cuatro líneas distintas y no se aprovecha la localidad
+espacial dentro del bloque \cite{bryant2015,wikipedia-locality,lam1991}; el
+tamaño de bloque es precisamente uno de los parámetros que más afecta al
+rendimiento de una caché \cite{smith1987}. Con
+16 líneas el conjunto de trabajo cabe entero. Con bloques mayores o con
+menos líneas, el reparto de fallos sería distinto
+\cite{bryant2015,patterson2017}.
+
+% ============================================================
+% 6. CONCLUSIONES  (1 cuartilla)
+% ============================================================
+\section{Conclusiones}
+\label{sec:conclusiones}
+
+\textbf{Logros frente a los objetivos.} Este trabajo se marcó dos
+objetivos (sección~\ref{sec:intro}): comprobar por simulación el
+comportamiento teórico de cada mapeo y cuantificar sus diferencias
+sobre una carga común, y ambos se cumplen. Se implementaron en
+VHDL-2008 la memoria principal y
+los tres mapeos de caché con una interfaz común, y cinco bancos de
+prueba con autochequeo verifican cada dato leído, cada resultado
+acierto/falto y los totales de la traza. En condiciones idénticas
+(misma traza, misma memoria, mismo arbitraje), la tasa de aciertos
+resultante es de 35\,\% en el mapeo directo, 50\,\% en el por conjuntos
+y 65\,\% en el asociativo total, con un tiempo medio de acceso de 49,5,
+45,0 y 40,5~ns respectivamente: los 6, 3 y 0 fallos de conflicto son la
+única diferencia entre ellos, ya que los 7 fallos obligatorios y los
+fallos de capacidad son comunes.
+
+\textbf{Cuándo conviene cada mapeo.} El mapeo directo sigue siendo la
+opción cuando mandan la simplicidad, el coste y un tiempo de acierto
+bajo y previsible, por ejemplo en cachés pequeñas o en los primeros
+niveles de una jerarquía modesta \cite{stallings2019,null2024}. El
+asociativo por conjuntos es el compromiso habitual: con solo dos vías y
+un bit de LRU por conjunto recupera buena parte de los aciertos
+perdidos --en nuestra traza, 3 de los 6 fallos de conflicto-- a un
+coste muy superior al del directo \cite{hennessy2019,wikipedia-cpu-cache}.
+El asociativo total es el que más aciertos obtiene y conviene cuando el
+presupuesto de tiempo, área y energía lo permite, porque exige
+comparar todas las etiquetas en paralelo \cite{hennessy2019}.
+
+\textbf{Limitaciones.} La caché es de solo lectura: no hay bit de
+suciedad ni política de escritura, de modo que no se observan
+invalidaciones ni actualizaciones \cite{bryant2015,wikipedia-cache-computing}.
+Los tamaños (64~B de caché frente a 1~KB de memoria) y la traza de
+20 accesos son pequeños para observar fallos de capacidad, y la
+memoria de comportamiento tiene una latencia de un ciclo. Por último,
+GHDL se usa como simulador --el backend mcode del equipo no permite
+síntesis \cite{ghdl-docs}--: los resultados son funcionales, no de
+silicio.
+
+\textbf{Trabajo futuro.} Los siguientes pasos naturales son: incorporar
+el bit de suciedad con las políticas \emph{write-through} y
+\emph{write-back} \cite{wikipedia-cache-computing,bryant2015,stallings2019};
+añadir un segundo nivel de caché para estudiar una jerarquía real
+\cite{tanenbaum2013}; sustituir LRU por aproximaciones cuando crezca la
+asociatividad, como FIFO, aleatorio o pseudo-LRU \cite{hennessy2019};
+y ejecutar trazas de programas reales, más largas y con más bloques
+destinados a hacer aparecer los fallos de capacidad
+\cite{patterson2017,bryant2015}. Ampliar también la comparación a más
+configuraciones --distinto número de vías y de líneas-- para obtener la
+curva de asociatividad frente a tasa de aciertos \cite{bryant2015}.
+
+\textbf{Reproducibilidad.} Todo el experimento se repite con los
+wrappers del repositorio: \texttt{scripts/\allowbreak vhdl-sim}
+vuelve a generar los cinco resultados y
+\texttt{scripts/\allowbreak latexbuild} recompone este informe, mientras
+la integración continua ejecuta los cinco bancos en
+cada \emph{pull request}. Los valores de este artículo no dependen,
+por tanto, de una ejecución aislada, sino del propio código.
+
+% ============================================================
+% REFERENCIAS  (>= 15 — indicar exactamente dónde aparece el texto)
+% ============================================================
+% IMPORTANTE: cada referencia debe permitir ubicar exactamente dónde
+% aparece el texto sugerido (capítulo/§/página, o URL + fecha de consulta).
+% Anota la ubicación en el campo note de la entrada.
+\bibliographystyle{splncs04}
+\bibliography{referencias}
+
+% ============================================================
+% APÉNDICE — CÓDIGO VHDL
+% ============================================================
+\appendix
+\section{Código VHDL}
+\label{app:codigo}
+
+Código completo de los cuatro módulos de la unidad: memoria principal
+(Listado~\ref{lst:memoria}), mapeo directo (Listado~\ref{lst:directo}),
+asociativo total (Listado~\ref{lst:asociativa}) y asociativo por
+conjuntos (Listado~\ref{lst:conjuntos}). Los listados se incluyen con
+\texttt{lstinputlisting} directamente desde
+\texttt{vhdl/\allowbreak mapeo-\allowbreak memoria/\allowbreak src/},
+de modo que siempre coinciden con el código que ejecutan los bancos de
+prueba de la sección~\ref{sec:propuesta}.
+
+\lstinputlisting[
+  caption={memoria\_principal.vhd --- RAM de comportamiento de 1~KiB
+    (256 palabras de 4~B) con patrón de fábrica y puerto de escritura},
+  label={lst:memoria}]{../../vhdl/mapeo-memoria/src/memoria_principal.vhd}
+
+\lstinputlisting[
+  caption={cache\_directo.vhd --- caché de mapeo directo: 16 líneas de
+    4~B, sin reemplazo, FSM de cuatro estados},
+  label={lst:directo}]{../../vhdl/mapeo-memoria/src/cache_directo.vhd}
+
+\lstinputlisting[
+  caption={cache\_asociativa.vhd --- caché asociativa total: 16 líneas
+    con comparación paralela de las etiquetas y LRU por contador},
+  label={lst:asociativa}]{../../vhdl/mapeo-memoria/src/cache_asociativa.vhd}
+
+\lstinputlisting[
+  caption={cache\_conjuntos.vhd --- caché por conjuntos: 8 conjuntos de
+    2 vías con LRU de 1 bit por conjunto},
+  label={lst:conjuntos}]{../../vhdl/mapeo-memoria/src/cache_conjuntos.vhd}
+
+\end{document}

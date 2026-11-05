@@ -71,6 +71,9 @@ indica que continúe (cambia a modo de ejecución).
    lo que falle. No des por bueno un módulo que no pasa su testbench.
 4. **No le dejes subir artefactos**: revísale el `git status` antes del commit.
 5. **Git delegado a la guía**: para ramas y PRs, la IA sigue `docs/guia-git.md`.
+   Recuérdale que **abra una rama por cada feature** (`vhdl/<unidad>/<feat>`,
+   `reporte/<unidad>/<feat>`, `docs/<feat>`…) aunque no se lo pidas; es una
+   regla del repo, no una decisión de la IA.
 
 ## Comandos útiles del TUI
 

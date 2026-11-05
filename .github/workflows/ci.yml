@@ -1,0 +1,77 @@
+# ============================================================
+# CI ligero — Arquitectura de Computadoras
+#
+# Comprueba, en cada PR y en cada push a dev/main:
+#   1) que los scripts bash no tengan errores de sintaxis;
+#   2) que el VHDL de cada unidad analiza y que sus testbenches pasan.
+#
+# NO compila LaTeX: en el equipo se hace con
+#   reportes/<unidad>/ → ../../scripts/latexbuild main.tex
+#
+# El GHDL de CI (apt, Ubuntu) es el equivalente al de WSL del equipo.
+# ============================================================
+name: CI
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+
+jobs:
+  scripts:
+    name: Scripts bash
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sintaxis (bash -n) — bloquea si falla
+        run: |
+          set -euo pipefail
+          for f in scripts/instalar.sh scripts/latexbuild scripts/vhdl-analizar scripts/vhdl-sim scripts/vhdl-wave; do
+            echo "· $f"
+            bash -n "$f"
+          done
+
+      - name: ShellCheck (informativo, no bloquea)
+        continue-on-error: true
+        run: shellcheck -S error scripts/instalar.sh scripts/latexbuild scripts/vhdl-analizar scripts/vhdl-sim scripts/vhdl-wave
+
+  vhdl:
+    name: GHDL (analizar + simular)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar GHDL
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ghdl
+          ghdl --version
+
+      - name: Analizar cada unidad y simular sus testbenches
+        run: |
+          set -euo pipefail
+          hubo_unidad=0
+          for d in vhdl/*/; do
+            unidad="$(basename "$d")"
+            # Sin .vhd todavía → se omite (la carpeta existe desde el arranque)
+            if ! find "$d/src" "$d/tb" \( -name '*.vhd' -o -name '*.vhdl' \) 2>/dev/null | grep -q .; then
+              echo "::notice::[$unidad] sin ficheros .vhd todavía — omitida"
+              continue
+            fi
+            hubo_unidad=1
+
+            echo "=== [$unidad] análisis ==="
+            scripts/vhdl-analizar "$unidad"
+
+            # Convención vhdl/AGENTS.md: tb_<modulo>.vhd contiene entity tb_<modulo>
+            while read -r tb; do
+              [[ -z "$tb" ]] && continue
+              echo "=== [$unidad] simulando $tb ==="
+              scripts/vhdl-sim "$unidad" "$tb"
+            done < <(find "$d/tb" -name 'tb_*.vhd' -printf '%f\n' | sed 's/\.vhdl\?$//' | sort)
+          done
+
+          if [[ "$hubo_unidad" -eq 0 ]]; then
+            echo "::notice::Todavía no hay VHDL con contenido: nada que comprobar."
+          fi

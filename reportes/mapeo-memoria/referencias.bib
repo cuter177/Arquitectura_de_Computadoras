@@ -1,0 +1,350 @@
+% ============================================================
+% Bibliografía del reporte mapeo-memoria — estilo splncs04 (citas [n])
+%
+% REGLA ESTRICTA (reportes/AGENTS.md):
+%   * mínimo 15 referencias por reporte;
+%   * al menos 15 deben llevar identificador indexado: campo isbn
+%     (libros), issn (revistas) o doi (artículos/estándares). El
+%     identificador se refleja también en el campo note para que se
+%     vea en el PDF (splncs04 no imprime isbn/doi por sí solo);
+%   * en cada entrada deja anotada la ubicación EXACTA de donde sale
+%     el texto sugerido: capítulo/§/página, o URL + fecha de consulta;
+%   * nada de relleno inventado: no cites lo que no puedas ubicar.
+%
+% Ejemplo de anotación interna (usa el campo note de cada entrada; no
+% olvides que el .bib NO admite comentarios dentro de una entrada):
+%   author = {Autor Apellido},
+%   note   = {cap. 4, p. 123 — frase sobre pipeline de etapas}
+% ============================================================
+
+% ------------------------------------------------------------
+% LIBROS
+% ------------------------------------------------------------
+
+% Marco teórico: localidad, los tres mapeos, reemplazo, rendimiento y
+% el Ejemplo 5.1 del que se reescalan los parámetros del trabajo.
+% Ubicación verificada sobre el índice del propio libro (11.ª ed.).
+@book{stallings2019,
+  author    = {Stallings, William},
+  title     = {Computer Organization and Architecture: Designing for Performance},
+  publisher = {Pearson},
+  edition   = {11},
+  year      = {2019},
+  isbn      = {978-0-13-499719-3},
+  note      = {cap. 4 ``The Memory Hierarchy: Locality and Performance'', \S4.1 ``Principle of Locality'' (localidad temporal y espacial); cap. 5 ``Cache Memory'', pp. 138-176: \S5.1 ``Cache Memory Principles'' (p. 139), \S5.2 ``Elements of Cache Design'' (pp. 143-164) con las subsecciones ``Mapping Function'' (fórmula i = j mod m), ``Direct Mapping'' (con thrashing tras la Fig. 5.8 y los Ejemplos 5.1a, 5.1b y 5.1c de los tres mapeos; el Ejemplo 5.1 usa caché de 64 kB, memoria de 16 MB, bloques de 4 B y dirección de 24 bits), ``Associative Mapping'', ``Set-Associative Mapping'', ``Replacement Algorithms'' y ``Write Policy'', y \S5.5 ``Cache Performance Models'' (p. 169); ISBN: 978-0-13-499719-3}
+}
+
+% Jerarquía de memoria, coste de la asociatividad y reemplazo (LRU y sus
+% aproximaciones). Ubicación verificada sobre el índice y el texto del libro.
+@book{hennessy2019,
+  author    = {Hennessy, John L. and Patterson, David A.},
+  title     = {Computer Architecture: A Quantitative Approach},
+  publisher = {Morgan Kaufmann},
+  edition   = {6},
+  year      = {2019},
+  isbn      = {978-0-12-811905-1},
+  note      = {cap. 2 ``Memory Hierarchy Design'': \S2.1 ``Introduction'' (p. 78, jerarquía de memoria) y \S2.3 ``Ten Advanced Optimizations of Cache Performance'' (p. 94, compromiso entre asociatividad, tiempo de acceso y energía; Figs. 2.8 y 2.9); Appendix B ``Review of Memory Hierarchy'', \S{}B.1 ``Introduction'', pp. B-8-B-10: Q1 (colocación directa/por conjuntos/total y (Block address) MOD (Number of sets)), Q2 (reparto tag-índice-offset de la Fig. B.3) y Q3 (reemplazo aleatorio, LRU y FIFO, con la nota de que LRU se vuelve caro y se aproxima con pseudo-LRU); ISBN: 978-0-12-811905-1}
+}
+
+% Localidad y organización de la caché desde el punto de vista del
+% programador. Ubicación verificada sobre el índice del propio libro.
+@book{patterson2017,
+  author    = {Patterson, David A. and Hennessy, John L.},
+  title     = {Computer Organization and Design: The Hardware/Software Interface, {RISC-V} Edition},
+  publisher = {Morgan Kaufmann},
+  edition   = {5},
+  year      = {2017},
+  isbn      = {978-0-12-812275-4},
+  note      = {cap. 5 ``Large and Fast: Exploiting Memory Hierarchy'': \S5.1 ``Introduction'' (p. 366, principio de localidad y jerarquía de memoria), \S5.2 ``Memory Technologies'' (p. 370), \S5.3 ``The Basics of Caches'' (p. 375, organización de la caché, mapeo y medición del rendimiento) y \S5.4 ``Measuring and Improving Cache Performance'' (p. 390); ISBN: 978-0-12-812275-4}
+}
+
+% Jerarquía de memoria y organización de la caché (funciones de mapeo,
+% reemplazo y rendimiento). Ubicación verificada sobre el índice de la
+% 5.ª edición (cap. 5 ``The Memory System''). Candidata sustitutoria de
+% las referencias web para el marco teórico.
+@book{hamacher2002,
+  author    = {Hamacher, V. Carl and Vranesic, Zvonko G. and Zaky, Safwat G.},
+  title     = {Computer Organization},
+  publisher = {McGraw-Hill},
+  edition   = {5},
+  year      = {2002},
+  isbn      = {978-0-07-125137-2},
+  note      = {cap. 5 ``The Memory System'' (p. 291 y ss.): organización de la jerarquía de memoria y \S5.3 ``Cache Memory'' con las funciones de mapeo (\emph{mapping functions}) que determinan en qué línea de la caché se coloca cada bloque de la memoria principal, y \S5.4 ``Speed, Size, and Cost'' (p. 313); ISBN: 978-0-07-125137-2}
+}
+
+% Modelado digital en HDL y bancos de prueba: soporta la metodología de
+% la Propuesta Experimental (módulos + testbench). Ubicación verificada
+% en el catálogo de la Library of Congress (índice de la 1.ª edición).
+@book{harris2008,
+  author    = {Harris, David Money and Harris, Sarah L.},
+  title     = {Digital Design and Computer Architecture: From Gates to Processors},
+  publisher = {Morgan Kaufmann},
+  year      = {2008},
+  isbn      = {978-0-12-370497-9},
+  note      = {cap. 4 ``Hardware Description Languages'': \S4.1 ``Introduction'' (módulos, puertos y banco de pruebas), descripción de sistemas digitales en HDL (Verilog y VHDL) y construcción de un procesador a partir de bloques descritos en HDL; ISBN: 978-0-12-370497-9}
+}
+
+% Localidad y parámetros de la caché (secciones 6.2-6.4).
+@book{bryant2015,
+  author    = {Bryant, Randal E. and O'Hallaron, David R.},
+  title     = {Computer Systems: A Programmer's Perspective},
+  publisher = {Pearson},
+  edition   = {3},
+  year      = {2015},
+  isbn      = {978-0-13-409266-9},
+  note      = {cap. 6 ``The Memory Hierarchy'' (estructura de secciones tomada del índice de la edición Global, ISBN 978-1-292-10177-4): \S6.2 ``Locality'' (6.2.1 ``Locality of References to Program Data'', 6.2.2 ``Locality of Instruction Fetches'' y 6.2.3 ``Summary of Locality''), \S6.3 ``The Memory Hierarchy'' (6.3.1 ``Caching in the Memory Hierarchy'') y \S6.4 ``Cache Memories'' (6.4.1 ``Generic Cache Memory Organization'', 6.4.2 ``Direct-Mapped Caches'', 6.4.3 ``Set Associative Caches'', 6.4.4 ``Fully Associative Caches'', 6.4.5 ``Issues with Writes'' y 6.4.7 ``Performance Impact of Cache Parameters''); ISBN: 978-0-13-409266-9}
+}
+
+% Brecha CPU-memoria, ratio de aciertos y jerarquía de 5 niveles.
+% Ubicación verificada sobre el índice y el texto del propio libro.
+@book{tanenbaum2013,
+  author    = {Tanenbaum, Andrew S. and Austin, Todd},
+  title     = {Structured Computer Organization},
+  publisher = {Pearson},
+  edition   = {6},
+  year      = {2013},
+  isbn      = {978-0-13-291652-3},
+  note      = {\S2.2.5 ``Cache Memory'', pp. 82-84 (brecha entre CPU y memoria, principio de localidad, ratio de aciertos h, tiempo medio de acceso = c + (1-h){\textperiodcentered}m y líneas de caché) y \S2.3.1 ``Memory Hierarchies'', pp. 86-87 (jerarquía de cinco niveles: registros, caché, memoria principal, discos y cinta con los tres parámetros que varían al descender); ISBN: 978-0-13-291652-3}
+}
+
+% Los tres esquemas de mapeo, las políticas de reemplazo y el tiempo
+% efectivo de acceso. Ubicación verificada sobre el índice del libro.
+@book{null2024,
+  author    = {Null, Linda and Lobur, Julia},
+  title     = {The Essentials of Computer Organization and Architecture},
+  publisher = {Jones \& Bartlett Learning},
+  edition   = {6},
+  year      = {2024},
+  isbn      = {978-1-284-25943-8},
+  note      = {cap. 6 ``Memory'' (p. 363): \S6.3 ``The Memory Hierarchy'' (p. 365) y \S6.3.1 ``Locality of Reference'' (p. 368); \S6.4 ``Cache Memory'' (p. 368) con \S6.4.1 ``Cache Mapping Schemes'' (p. 371, mapeo directo, asociativo y por conjuntos), \S6.4.2 ``Replacement Policies'' (p. 386), \S6.4.3 ``Effective Access Time and Hit Ratio'' (p. 389), \S6.4.4 ``When Does Caching Break Down?'' (p. 390) y \S6.4.5 ``Cache Write Policies'' (p. 391); ISBN: 978-1-284-25943-8}
+}
+
+% ------------------------------------------------------------
+% ARTÍCULOS (revistas y congresos — con DOI)
+% ------------------------------------------------------------
+
+% Survey clásico de la memoria caché: los tres mapeos, política de
+% reemplazo y thrashing. Ubicación verificada en ACM Digital Library
+% (vol. 14, núm. 3, sept. 1982, pp. 473-530) y sobre el texto del
+% artículo (PDF de acceso abierto).
+@article{smith1982,
+  author  = {Smith, Alan Jay},
+  title   = {Cache Memories},
+  journal = {ACM Computing Surveys},
+  volume  = {14},
+  number  = {3},
+  pages   = {473--530},
+  month   = sep,
+  year    = {1982},
+  doi     = {10.1145/356887.356892},
+  note    = {sección 2 ``Cache Memories'' con las subsecciones sobre las funciones de mapeo (directo, asociativo y por conjuntos), la discusión de \emph{thrashing} como consecuencia de los conflictos de mapeo directo y la relación entre tasa de aciertos y parámetros de la caché; DOI: 10.1145/356887.356892, ISSN: 0360-0300}
+}
+
+% Elección del tamaño de bloque: respaldo del matiz de bloques de una
+% sola palabra discutido en Resultados. Ubicación verificada en ACM
+% Digital Library (IEEE Trans. Computers vol. 36, núm. 9, sept. 1987,
+% pp. 1063-1076) y sobre el resumen del artículo.
+@article{smith1987,
+  author  = {Smith, Alan Jay},
+  title   = {Line (Block) Size Choice for {CPU} Cache Memories},
+  journal = {IEEE Transactions on Computers},
+  volume  = {36},
+  number  = {9},
+  pages   = {1063--1076},
+  month   = sep,
+  year    = {1987},
+  doi     = {10.1109/TC.1987.5009537},
+  note    = {resumen y sección I (Introduction): el tamaño de línea (bloque) es uno de los parámetros que más afecta al rendimiento de la caché, con el compromiso entre localidad espacial y penalización de un fallo al traer bytes no usados; DOI: 10.1109/TC.1987.5009537}
+}
+
+% Modelo de conjunto de trabajo (working set) y localidad formal:
+% respaldo teórico del análisis de la traza y del thrashing.
+% Ubicación verificada sobre el texto del artículo (PDF de ACM).
+@article{denning1968,
+  author  = {Denning, Peter J.},
+  title   = {The Working Set Model for Program Behavior},
+  journal = {Communications of the ACM},
+  volume  = {11},
+  number  = {5},
+  pages   = {323--333},
+  month   = may,
+  year    = {1968},
+  doi     = {10.1145/363095.363141},
+  note    = {sección 3 ``The Working Set Model'': definición del conjunto de trabajo $W(t,\tau)$ como la colección de páginas referenciadas en el intervalo $(t-\tau, t)$ (fórmula 1) y sección 4 ``Memory Allocation''; DOI: 10.1145/363095.363141}
+}
+
+% Propiedades formales del modelo de conjunto de trabajo: el marco
+% teórico de por qué el thrashing aparece cuando el conjunto de
+% trabajo no cabe. Ubicación verificada en ACM Digital Library
+% (CACM vol. 15, núm. 3, marzo 1972, pp. 191-198).
+@article{denning1972,
+  author  = {Denning, Peter J. and Schwartz, Stuart C.},
+  title   = {Properties of the Working-Set Model},
+  journal = {Communications of the ACM},
+  volume  = {15},
+  number  = {3},
+  pages   = {191--198},
+  month   = mar,
+  year    = {1972},
+  doi     = {10.1145/361268.361281},
+  note    = {desarrollo matemático del modelo de conjunto de trabajo: propiedades del conjunto de trabajo y su relación con el comportamiento de los programas en memoria virtual; DOI: 10.1145/361268.361281}
+}
+
+% Anomalía de Belady: referencia clásica del reemplazo (por qué FIFO
+% puede ser peor que LRU). Ubicación verificada en ACM Digital Library
+% (FJCC 1969, pp. 355-362).
+@article{belady1969,
+  author  = {Bel\'{a}dy, L\'{a}szl\'{o} A.},
+  title   = {An Anomaly in Space-Time Characteristics of Certain Programs Running in a Paging Machine},
+  journal = {Proceedings of the AFIPS Fall Joint Computer Conference},
+  volume  = {36},
+  pages   = {355--362},
+  year    = {1969},
+  doi     = {10.1145/363011.363155},
+  note    = {el tiempo de ejecución de un programa en una máquina con paginación no siempre crece al reducir el almacén disponible: la política FIFO puede empeorar al añadir marcos (anomalía de Belady), motivo por el que se prefieren políticas como LRU; DOI: 10.1145/363011.363155}
+}
+
+% Localidad espacial y bloqueo de bucles: respaldo del matiz de que un
+% bloque de una sola palabra no aprovecha la localidad espacial.
+% Ubicación verificada en ACM Digital Library (ASPLOS IV, abril 1991,
+% pp. 63-74) y sobre el resumen del artículo.
+@article{lam1991,
+  author  = {Lam, Monica S. and Rothberg, Edward E. and Wolf, Michael E.},
+  title   = {The Cache Performance and Optimizations of Blocked Algorithms},
+  journal = {ACM SIGPLAN Notices},
+  volume  = {26},
+  number  = {4},
+  pages   = {63--74},
+  month   = apr,
+  year    = {1991},
+  doi     = {10.1145/106972.106981},
+  note    = {resumen y sección 1: datos de rendimiento de caché de programas bloqueados; el bloqueo reorganiza los cálculos para que aprovechen la localidad espacial, que es lo que un bloque de una sola palabra no puede explotar; DOI: 10.1145/106972.106981}
+}
+
+% ------------------------------------------------------------
+% ENCICLOPEDIA EN LÍNEA (Wikipedia)
+% ------------------------------------------------------------
+
+% Definición de función de mapeo, políticas de la caché y tipos de fallo.
+@misc{wikipedia-cache,
+  author       = {{Wikipedia, la enciclopedia libre}},
+  title        = {Caché (informática)},
+  howpublished = {\url{https://es.wikipedia.org/wiki/Caché_(informática)}},
+  year         = {2026},
+  note         = {secciones ``Diseño'' (con las subsecciones ``Política de ubicación'', ``Política de reemplazo'' y ``Política de actualización o escritura'') y ``Optimización'', dentro de ``Reducción de fallos'', la subsección ``Tipos de fallos''; última edición del artículo: 2026-07-31; consulta: 2026-10-17}
+}
+
+% Asociatividad, ecuación del mapeo directo y LRU de 1 bit por vía.
+@misc{wikipedia-cpu-cache,
+  author       = {{Wikipedia, the free encyclopedia}},
+  title        = {{CPU cache}},
+  howpublished = {\url{https://en.wikipedia.org/wiki/CPU_cache}},
+  year         = {2026},
+  note         = {secciones ``Associativity'' (directo, N-way set associative y su compromiso), ``Direct-mapped cache'' (ecuación x = y mod n), ``Two-way set associative cache'' (LRU con un bit por par de vías) y ``Cache entry structure'' (reparto tag-índice-block offset de la dirección); última edición del artículo: 2026-09-26; consulta: 2026-10-17}
+}
+
+% Politica LRU y tiempo medio de acceso a memoria.
+@misc{wikipedia-replacement,
+  author       = {{Wikipedia, the free encyclopedia}},
+  title        = {{Cache replacement policies}},
+  howpublished = {\url{https://en.wikipedia.org/wiki/Cache_replacement_policies}},
+  year         = {2026},
+  note         = {sección ``Least Recently Used (LRU)'' (definición y ejemplo de acceso A B C D E D F) y el apartado ``Overview'', con la fórmula de la average memory reference time y la relación entre ratio de aciertos, latencia y coste de actualización; última edición del artículo: 2026-09-22; consulta: 2026-10-17}
+}
+
+% Localidad temporal y espacial y jerarquia de memoria.
+@misc{wikipedia-locality,
+  author       = {{Wikipedia, the free encyclopedia}},
+  title        = {{Locality of reference}},
+  howpublished = {\url{https://en.wikipedia.org/wiki/Locality_of_reference}},
+  year         = {2026},
+  note         = {secciones ``Types of locality'' (localidad temporal y espacial) y ``Hierarchical memory'' (motivo de la jerarquía de memoria); última edición del artículo: 2026-06-17; consulta: 2026-10-17}
+}
+
+% Clasificacion de fallos (3C) y AMAT, para el analisis de resultados.
+@misc{wikipedia-metrics,
+  author       = {{Wikipedia, the free encyclopedia}},
+  title        = {{Cache performance measurement and metric}},
+  howpublished = {\url{https://en.wikipedia.org/wiki/Cache_performance_measurement_and_metric}},
+  year         = {2025},
+  note         = {secciones ``Introduction to types of cache misses'', ``Compulsory misses'', ``Conflict misses'' (fallo por conflicto, el que provoca el thrashing), ``Capacity misses'' y ``Average memory access time''; última edición del artículo: 2025-12-03; consulta: 2026-10-17}
+}
+
+% Motivacion, operacion y politicas de escritura (trabajo futuro).
+@misc{wikipedia-cache-computing,
+  author       = {{Wikipedia, the free encyclopedia}},
+  title        = {{Cache (computing)}},
+  howpublished = {\url{https://en.wikipedia.org/wiki/Cache_(computing)}},
+  year         = {2026},
+  note         = {secciones ``Motivation'', ``Operation'' y ``Write policies'' (write-through y write-back, la política que este trabajo deja fuera); última edición del artículo: 2026-09-30; consulta: 2026-10-17}
+}
+
+% ------------------------------------------------------------
+% ESTÁNDAR DE LENGUAJE
+% ------------------------------------------------------------
+
+% Lenguaje VHDL-2008 empleado en las descripciones.
+@misc{ieee1076,
+  author       = {{IEEE}},
+  title        = {{IEEE Std 1076-2008}: {IEEE Standard} for {VHDL} Language Reference Manual},
+  howpublished = {\url{https://standards.ieee.org/standard/1076-2008.html}},
+  year         = {2008},
+  doi          = {10.1109/IEEESTD.2009.4772740},
+  note         = {resumen del estándar (VHDL como notación formal para creación, verificación, simulación y pruebas de diseños, y para el mantenimiento de los datos de diseño) y ficha técnica ``Published: 2009-01-26'', ``ANSI Approved: 2009-02-10'', ``Superseded by 1076-2019''; DOI: 10.1109/IEEESTD.2009.4772740 (IEEE Xplore doc. 4772740); consulta: 2026-10-17}
+}
+
+% Paquete std_logic_1164: el tipo std_logic que usan todos los puertos
+% y señales de los módulos (también citado en los otros 3 reportes).
+% Ubicación verificada en el resumen del estándar en IEEE Xplore (doc.
+% 257627) y en el texto del propio paquete (GitHub ghdl/libraries).
+@misc{ieee1164,
+  author       = {{IEEE}},
+  title        = {{IEEE Std 1164}: {IEEE Standard} Multivalue Logic System for {VHDL} Model Interoperability ({Std\_logic\_1164})},
+  howpublished = {\url{https://standards.ieee.org/standard/1164.html}},
+  year         = {1993},
+  doi          = {10.1109/IEEESTD.1993.115571},
+  note         = {declaración del paquete \texttt{std\_logic\_1164} (``This package provides a standard datatype system for the declaration of ports and signals used in modeling digital components in VHDL''), que define el tipo lógico multivalor usado en todos los puertos y señales de los módulos de este trabajo; DOI: 10.1109/IEEESTD.1993.115571 (IEEE Xplore doc. 257627); consulta: 2026-10-18}
+}
+
+% ------------------------------------------------------------
+% HERRAMIENTAS
+% ------------------------------------------------------------
+
+% Herramienta de simulación del curso. Ubicación del texto usado:
+% secciones "Overview" y "Getting Started" de la documentación oficial.
+% Fecha de consulta: 2026-10-17.
+@misc{ghdl-docs,
+  author       = {{GHDL developers}},
+  title        = {{GHDL}: the {VHDL} simulator},
+  howpublished = {\url{https://ghdl.github.io/ghdl/}},
+  year         = {2026},
+  note         = {secciones ``Overview'' y ``Getting Started''; consulta: 2026-10-17}
+}
+
+% Fases de trabajo con GHDL que replica el wrapper scripts/vhdl-sim.
+@misc{ghdl-invoking,
+  author       = {{GHDL developers}},
+  title        = {{Invoking} {GHDL}},
+  howpublished = {\url{https://ghdl.github.io/ghdl/using/InvokingGHDL.html}},
+  year         = {2026},
+  note         = {secciones ``Design building commands'' (``Analysis [-a]'', ``Elaboration [-e]'' y ``Run [-r]'') y ``Options'' (entre ellas --std y --workdir); consulta: 2026-10-17}
+}
+
+% Volcado de ondas a VCD, origen de las capturas de la seccion 4.
+@misc{ghdl-simulation,
+  author       = {{GHDL developers}},
+  title        = {{Simulation (runtime)}},
+  howpublished = {\url{https://ghdl.github.io/ghdl/using/Simulation.html}},
+  year         = {2026},
+  note         = {secciones ``Simulation options'' y ``Export waveforms'' (opción --vcd <FILENAME>, que vuelca los valores de las señales antes de cada ciclo no delta); consulta: 2026-10-17}
+}
+
+% Visor de ondas usado para las capturas. Ubicación del texto usado:
+% sección "Documentation" del sitio oficial. Fecha de consulta: 2026-10-17.
+@misc{gtkwave-docs,
+  author       = {{GTKWave developers}},
+  title        = {{GTKWave} Analyzer},
+  howpublished = {\url{https://gtkwave.sourceforge.net/}},
+  year         = {2026},
+  note         = {sección ``Documentation''; consulta: 2026-10-17}
+}

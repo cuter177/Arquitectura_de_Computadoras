@@ -1,0 +1,28 @@
+# ============================================================
+# Configuración de GTKWave para las capturas del reporte
+# datapath-1. Se pasa con -r al lanzar GTKWave:
+#
+#   GDK_BACKEND=x11 gtkwave -r reportes/datapath-1/capturas/gtkwave.rc \
+#           -S reportes/datapath-1/capturas/tb-*.tcl \
+#           vhdl/datapath-1/salidas/tb_*.vcd
+#
+# ¡IMPORTANTE!: exportar GDK_BACKEND=x11 antes de lanzar GTKWave.
+# GTKWave 3.3 de Ubuntu 24.04 es GTK3; con el backend Wayland de
+# WSLg el comando /File/Grab_To_File captura ventanas a negro o
+# incompletas de forma aleatoria; con X11 la captura es fiable.
+#
+# Objetivo: fondo claro liso (sin rejilla) y tipografía monoespaciada
+# grande para que las ondas se lean al tamaño de \textwidth.
+# ============================================================
+use_pango_fonts on
+use_nonprop_fonts yes
+use_big_fonts yes
+fontname_signals Monospace 16
+fontname_waves Monospace 16
+show_grid no
+enable_horiz_grid no
+dynamic_resizing 1
+fill_waveform no
+use_roundcaps 1
+initial_window_x 1700
+initial_window_y 760

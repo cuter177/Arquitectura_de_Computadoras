@@ -55,6 +55,20 @@ síntesis en este proyecto (no hay yosys ni flujo de síntesis). Si un usuario
 pregunta por sintetizar, aclara que el flujo del curso es simulación con
 GHDL + visualización con GTKWave.
 
+## Git: una rama por cada feature
+
+Cada módulo, testbench o refactor nuevo es una feature: **abre su rama antes
+de escribir el primer fichero**, aunque el usuario no lo pida explícitamente:
+
+```bash
+git switch dev && git pull
+git switch -c vhdl/<unidad>/<feat>     # ej.: vhdl/datapath-1/tb-alu
+```
+
+Al terminar (testbench pasando), PR de esa rama → `dev`. **Una feature = una
+rama**: no acumules dos features distintas en la misma rama. Detalle completo
+del flujo en `docs/guia-git.md`.
+
 ## Artefactos
 
 Nunca hagas `commit` de: `*.cf`, `*.o`, `*.ali`, `work-obj*`, `*.vcd`,

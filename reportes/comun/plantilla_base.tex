@@ -92,7 +92,8 @@ entidades, registros, ALU, buses) y decisiones de diseño. (3--5 cuartillas.)
 \section{Propuesta Experimental}
 \label{sec:propuesta}
 
-Metodología: herramientas (GHDL, GTKWave), estándar VHDL-2008, bancos de
+Metodología: herramientas de simulación (GHDL~\cite{ghdl-docs},
+GTKWave~\cite{gtkwave-docs}), estándar VHDL-2008, bancos de
 prueba, variables y procedimiento de evaluación. (1 hoja.)
 
 % ============================================================
@@ -104,12 +105,13 @@ prueba, variables y procedimiento de evaluación. (1 hoja.)
 Capturas de los módulos más importantes (máximo 2 hojas). Exporta las ondas
 de \texttt{vhdl/<unidad>/salidas/*.vcd} a PNG en \texttt{figuras/}.
 
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=0.9\textwidth]{figuras/captura_modulo.png}
-  \caption{Simulación de <módulo>: descripción breve de lo que se observa.}
-  \label{fig:captura}
-\end{figure}
+% Descomenta el bloque cuando exista la captura en figuras/
+% \begin{figure}[t]
+%   \centering
+%   \includegraphics[width=0.9\textwidth]{figuras/captura_modulo.png}
+%   \caption{Simulación de <módulo>: descripción breve de lo que se observa.}
+%   \label{fig:captura}
+% \end{figure}
 
 % ============================================================
 % 5. RESULTADOS  (3–5 cuartillas)
@@ -135,7 +137,11 @@ Cierre: logros frente a los objetivos, limitaciones y trabajo futuro.
 % ============================================================
 % IMPORTANTE: cada referencia debe permitir ubicar exactamente dónde
 % aparece el texto sugerido (capítulo/§/página, o URL + fecha de consulta).
-% Anota la ubicación en un comentario % justo debajo de la entrada.
+% Anótala en el campo note de la entrada (más seguro que un comentario,
+% porque el .bib no admite comentarios dentro de una entrada).
+% Crea también referencias.bib junto a main.tex (hay ejemplos en
+% reportes/<unidad>/referencias.bib). Ojo: bibtex falla si no hay
+% ninguna \cite en el texto.
 \bibliographystyle{splncs04}
 \bibliography{referencias}
 
