@@ -400,6 +400,32 @@ if command -v kpsewhich >/dev/null 2>&1 && [[ -z "$(kpsewhich pzdr.tfm 2>/dev/nu
     info "  Suele venir en el mismo paquete de fuentes recomendadas de TeX Live"
 fi
 
+# DejaVu Sans Mono: datapath-1 y datapath-3 la usan para los listados de VHDL
+# (`\setmonofont{DejaVu Sans Mono}`). Sin ella fontspec aborta con "The font
+# ... cannot be found" y todo el código del apéndice se compone en `nullfont`
+# (páginas en blanco), mientras el texto normal sí se ve.
+if command -v fc-list >/dev/null 2>&1; then
+    if fc-list 2>/dev/null | grep -qi 'DejaVu Sans Mono'; then
+        ok "fuente DejaVu Sans Mono (listados de VHDL)"
+    else
+        falta "la fuente DejaVu Sans Mono (la usan datapath-1 y datapath-3 en \\setmonofont)"
+        case "$SISTEMA" in
+            arch|manjaro|endeavouros|artix)
+                info "  sudo pacman -S --needed ttf-dejavu"
+                ;;
+            ubuntu|debian|pop|linuxmint|raspbian)
+                info "  sudo apt install fonts-dejavu-core"
+                ;;
+            macos)
+                info "  brew install --cask font-dejavu-sans-mono"
+                ;;
+        esac
+        FALLOS=$((FALLOS+1))
+    fi
+else
+    aviso "no hay fc-list (fontconfig): no se puede comprobar DejaVu Sans Mono"
+fi
+
 # git / make
 command -v git  >/dev/null 2>&1 && ok "git:  $(git --version)"  || { falta "git";  FALLOS=$((FALLOS+1)); }
 command -v make >/dev/null 2>&1 && ok "make: $(make --version | head -1)" || { falta "make"; FALLOS=$((FALLOS+1)); }
