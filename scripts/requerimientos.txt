@@ -37,6 +37,17 @@ llncs.cls   # clase Springer LNCS. Paquete: texlive-publishers (Arch/Ubuntu).
 splncs04.bst# estilo de bibliografía Springer. Paquete: texlive-publishers.
 # NOTA: en Arch y Ubuntu llncs.cls y splncs04.bst vienen en `texlive-publishers`.
 # Verificación: kpsewhich llncs.cls && kpsewhich splncs04.bst
+fuentes-lm  # Latin Modern en OTF (lmroman10-regular.otf…). NO es opcional:
+            # llncs 2025+ carga `fontspec` y pide esa familia. Si falta, xelatex
+            # no aborta con un error legible: usa `nullfont` y el reporte sale
+            # con 17 páginas en blanco y miles de "Missing character: There is
+            # no X (...) in font nullfont!".
+            #   Arch:   sudo pacman -S --needed texlive-fontsrecommended
+            #   Ubuntu: sudo apt install texlive-fonts-recommended
+            # Verificación: kpsewhich lmroman10-regular.otf
+            #   (o: fc-list | grep -i "latin modern")
+            # El mismo paquete aporta pzdr.tfm (Zapf Dingbats) que hyperref usa
+            # para los recuadros de enlace; sin él solo hay un aviso inofensivo.
 
 # ---------- Utilidades ----------
 git        >= 2.30    # control de versiones.

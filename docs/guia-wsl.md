@@ -135,6 +135,7 @@ explorer.exe "$(wslpath -w build/main.pdf)"       # visor PDF de Windows
 | "Permission denied" en un script | `bash scripts/<script>` en lugar de `./scripts/<script>`, o `chmod +x scripts/*` |
 | Los scripts fallan raro / errores de síntaxis raros | Finales CRLF: `git config --global core.autocrlf input` y re-clona; `.gitattributes` se encarga del resto |
 | `llncs.cls not found` | `sudo apt install texlive-publishers` (lo hace `scripts/instalar.sh`) |
+| PDF en blanco + miles de `Missing character ... in font nullfont` | Faltan las fuentes Latin Modern: `sudo apt install texlive-fonts-recommended` |
 | `ghdl: not found` | `bash scripts/instalar.sh` |
 | Lento todo el rato | Estás en `/mnt/c/...`; clona en `~` |
 | No abre GTKWave | Ver tabla de GUI del paso 6 |

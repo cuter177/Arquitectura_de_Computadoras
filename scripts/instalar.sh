@@ -75,6 +75,7 @@ INSTALAR_APT() {
         texlive-publishers \
         texlive-latex-extra \
         texlive-bibtex-extra \
+        texlive-fonts-recommended \
         git \
         make
 }
@@ -89,10 +90,17 @@ INSTALAR_PACMAN() {
     # (`xelatex.fmt`) lo aporta `texlive-xetex`, que además es quien registra
     # la entrada de `xelatex` en fmtutil.cnf. Sin `texlive-xetex` el binario
     # existe pero falla con "I can't find the format file `xelatex.fmt'!".
+    # OJO 3: `texlive-fontsrecommended` NO es opcional. Desde llncs 2025
+    # (v2.26) la clase carga `fontspec` y pide la familia Latin Modern en OTF
+    # (`lmroman10-regular`, `lmroman12-regular`…), que en Arch aporta ese
+    # paquete (provee `texlive-lm` y `texlive-zapfding`). Sin él, xelatex NO
+    # da un error claro: cae a `nullfont` y llena el log de "Missing
+    # character: There is no X (...) in font nullfont!" con un PDF en blanco.
     sudo pacman -S --needed --noconfirm \
         gtkwave \
         texlive-bin \
         texlive-binextra \
+        texlive-fontsrecommended \
         texlive-latexextra \
         texlive-publishers \
         texlive-xetex \
@@ -196,8 +204,8 @@ if [[ $SOLO_CHECK -eq 0 ]]; then
                 echo ""
                 echo -e " ${ROJO}Sistema operativo no soportado por este script.${RESET}"
                 echo "         Instala manualmente según scripts/requerimientos.txt"
-                echo "         - Ubuntu/Debian: apt install ghdl gtkwave latexmk texlive-xetex texlive-publishers ..."
-                echo "         - Arch:          pacman -S texlive-publishers texlive-latexextra texlive-xetex ..."
+                echo "         - Ubuntu/Debian: apt install ghdl gtkwave latexmk texlive-xetex texlive-publishers texlive-fonts-recommended ..."
+                echo "         - Arch:          pacman -S texlive-publishers texlive-latexextra texlive-xetex texlive-fontsrecommended ..."
                 echo "                          y GHDL desde AUR (p. ej. yay -S ghdl)"
                 echo "         - Windows:       usa WSL2 + Ubuntu (docs/guia-wsl.md)"
                 exit 1
@@ -333,6 +341,63 @@ if command -v kpsewhich >/dev/null 2>&1; then
 else
     falta "kpsewhich (TeX Live no instalado)"
     FALLOS=$((FALLOS+1))
+fi
+
+# Fuentes Latin Modern (OTF). Desde llncs 2025 (v2.26) la clase carga
+# `fontspec` y pide `[lmroman10-regular]`, `[lmroman12-regular]`… Si esos OTF
+# no están, XeTeX no aborta con un mensaje útil: cambia a `nullfont` y cada
+# carácter del documento sale como
+#   Missing character: There is no A ("41) in font nullfont!
+# con un PDF de páginas en blanco (y latexmk termina con "return code 1").
+# Las aporta `texlive-fontsrecommended` (Arch) / `texlive-fonts-recommended`
+# (Ubuntu/Debian). kpsewhich las encuentra por nombre de fichero; fc-list sirve
+# de respaldo por si el mapa de TeX no las ve.
+buscar_fuente_lm() {
+    local candidato
+    if command -v kpsewhich >/dev/null 2>&1; then
+        for candidato in lmroman10-regular.otf lmroman12-regular.otf; do
+            if kpsewhich "$candidato" >/dev/null 2>&1; then
+                kpsewhich "$candidato"
+                return 0
+            fi
+        done
+    fi
+    if command -v fc-list >/dev/null 2>&1; then
+        candidato=$(fc-list 2>/dev/null | grep -im1 'latin modern' || true)
+        if [[ -n "$candidato" ]]; then
+            printf '%s' "$candidato"
+            return 0
+        fi
+    fi
+    return 1
+}
+
+LM_OTF=$(buscar_fuente_lm || true)
+if [[ -n "$LM_OTF" ]]; then
+    ok "fuentes Latin Modern -> $LM_OTF"
+else
+    falta "las fuentes Latin Modern (paquete texlive-fontsrecommended / texlive-fonts-recommended)"
+    info "  Sin ellas llncs + xelatex compilan EN BLANCO: el log se llena de"
+    info "  'Missing character: There is no X (...) in font nullfont!'"
+    case "$SISTEMA" in
+        arch|manjaro|endeavouros|artix)
+            info "  sudo pacman -S --needed texlive-fontsrecommended"
+            ;;
+        ubuntu|debian|pop|linuxmint|raspbian)
+            info "  sudo apt install texlive-fonts-recommended"
+            ;;
+        macos)
+            info "  MacTeX completo ya las trae; con BasicTeX: sudo tlmgr install lm"
+            ;;
+    esac
+    FALLOS=$((FALLOS+1))
+fi
+
+# Zapf Dingbats (pzdr.tfm): hyperref lo usa para los recuadros de los enlaces.
+# No impide compilar (solo avisa "not loadable"), pero ensucia el log.
+if command -v kpsewhich >/dev/null 2>&1 && [[ -z "$(kpsewhich pzdr.tfm 2>/dev/null)" ]]; then
+    aviso "falta pzdr.tfm (Zapf Dingbats): hyperref omite los recuadros de enlace"
+    info "  Suele venir en el mismo paquete de fuentes recomendadas de TeX Live"
 fi
 
 # git / make
