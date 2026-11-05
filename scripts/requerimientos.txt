@@ -37,6 +37,24 @@ llncs.cls   # clase Springer LNCS. Paquete: texlive-publishers (Arch/Ubuntu).
 splncs04.bst# estilo de bibliografía Springer. Paquete: texlive-publishers.
 # NOTA: en Arch y Ubuntu llncs.cls y splncs04.bst vienen en `texlive-publishers`.
 # Verificación: kpsewhich llncs.cls && kpsewhich splncs04.bst
+fuentes-lm  # Latin Modern en OTF (lmroman10-regular.otf…). NO es opcional:
+            # llncs 2025+ carga `fontspec` y pide esa familia. Si falta, xelatex
+            # no aborta con un error legible: usa `nullfont` y el reporte sale
+            # con 17 páginas en blanco y miles de "Missing character: There is
+            # no X (...) in font nullfont!".
+            #   Arch:   sudo pacman -S --needed texlive-fontsrecommended
+            #   Ubuntu: sudo apt install texlive-fonts-recommended
+            # Verificación: kpsewhich lmroman10-regular.otf
+            #   (o: fc-list | grep -i "latin modern")
+            # El mismo paquete aporta pzdr.tfm (Zapf Dingbats) que hyperref usa
+            # para los recuadros de enlace; sin él solo hay un aviso inofensivo.
+fuente-dejavu # DejaVu Sans Mono, usada por \setmonofont en datapath-1 y
+            # datapath-3 para los listados de VHDL. Si falta, fontspec aborta
+            # ("The font ... cannot be found") y el código del apéndice sale
+            # en `nullfont` (páginas en blanco) aunque el texto se vea bien.
+            #   Arch:   sudo pacman -S --needed ttf-dejavu
+            #   Ubuntu: sudo apt install fonts-dejavu-core
+            # Verificación: fc-list | grep -i "DejaVu Sans Mono"
 
 # ---------- Utilidades ----------
 git        >= 2.30    # control de versiones.
