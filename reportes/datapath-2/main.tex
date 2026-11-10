@@ -59,9 +59,9 @@ Puebla, México\\
 \begin{abstract}
 Resumen. Se diseñó e implementó en VHDL-2008 un datapath de 8 bits
 controlado por microcódigo que calcula la sumatoria $S(n)=1+\cdots+n$, el
-factorial $n!$ y el producto $A\times B$. El diseño integra ALU, acumulador,
-banco de registros, multiplexores, shifter y detector de cero, más una FSM
-con ROM de microinstrucciones. Se verificó con 13 testbenches autochequeados
+factorial $n!$ y el producto $A\times B$. El diseño integra ALU, banco de
+registros de doble lectura, multiplexores, shifter y detector de cero, más una
+FSM con ROM de microinstrucciones. Se verificó con 12 testbenches autochequeados
 en GHDL, obteniendo $S(5)=15$, $5!=120$ y $15\times15=225$. El flujo de
 simulación con GHDL y GTKWave resultó suficiente para validar la arquitectura.
 \end{abstract}
@@ -119,22 +119,30 @@ Un datapath se define por la colección de elementos de almacenamiento
 (registros) y elementos combinacionales (unidades funcionales, multiplexores
 y buses) que, bajo el mando de señales de control, transforman un conjunto de
 datos de entrada en un resultado~\cite{amdahl1964}. En nuestro diseño el
-acumulador (ACC) actúa como registro-bus principal: su salida alimenta la ALU,
-el banco de registros y el buffer de salida, lo que reduce el número de
-buses internos. La Figura~\ref{fig:esquema} resume el flujo de datos.
+banco de registros con doble lectura actúa como memoria principal del
+camino de datos: sus salidas \texttt{rf\_a} y \texttt{rf\_b} alimentan la
+ALU y el buffer de salida, y el resultado se realimenta al banco a través
+del shifter, lo que reduce el número de buses internos. La
+Figura~\ref{fig:esquema} resume el flujo de datos.
 
 \begin{figure}[t]
   \centering
   \fbox{\parbox{0.92\textwidth}{\centering\small
-  \texttt{ext1/ext2/rf\_out/sh\_out} $\rightarrow$ \textbf{mux\_sup}
-  $\rightarrow$ \textbf{acumulador} (bus\_acc)\\
-  \texttt{bus\_acc} $\rightarrow$ ALU.A;\quad \texttt{rf\_out} $\rightarrow$ ALU.B\\
+  \texttt{ext1/ext2/rf\_a/rf\_b} $\rightarrow$ \textbf{mux\_sup}
+  $\rightarrow$ \texttt{fuente} $\rightarrow$ ALU.A\\
+  \texttt{rf\_b} $\rightarrow$ ALU.B;\quad
   ALU $\rightarrow$ \textbf{mux\_inf} $\rightarrow$ \textbf{shifter}
-  $\rightarrow$ \texttt{sh\_out} (realimenta mux\_sup y detector\\
-  \texttt{bus\_acc} $\rightarrow$ \textbf{banco reg.} (escritura) y
-  \textbf{buffer salida} $\rightarrow$ \texttt{dato\_out}}}
-  \caption{Esquema del camino de datos implementado. El acumulador hace de
-  bus de datos y realimenta el multiplexor superior.}
+  $\rightarrow$ \texttt{sh\_out}\\
+  \texttt{sh\_out} $\rightarrow$ \textbf{banco reg.} (escritura en
+  \texttt{addr}) y \textbf{detector de cero}\\
+  \texttt{fuente} $\rightarrow$ \textbf{mux\_inf} (bypass,
+  \texttt{sel\_inf}$=1$) \quad
+  \texttt{rf\_a} $\rightarrow$ \textbf{buffer salida} $\rightarrow$
+  \texttt{dato\_out}}}
+  \caption{Esquema del camino de datos implementado. El banco de registros
+  con doble lectura es la memoria principal: el resultado vuelve al banco
+  por el shifter y la vía directa \texttt{fuente} permite copias sin pasar
+  por la ALU.}
   \label{fig:esquema}
 \end{figure}
 
@@ -162,18 +170,16 @@ la convención del proyecto de ``un fichero = una entidad''. Los módulos son:
   acarreo~\cite{bedrij1962} o los sumadores de prefijos
   paralelos~\cite{kogge1973}, no empleadas aquí por priorizar la simplicidad
   del modelo.
-  \item \textbf{acumulador.vhd}. Registro de 8 bits con \emph{write enable}
-  (\texttt{wr}) y \emph{clear} (\texttt{clear}); el \emph{clear} tiene
-  prioridad y el reset es asíncrono.
   \item \textbf{banco\_registros.vhd}. Banco de ocho registros de 8 bits con
-  lectura combinacional de un registro (\texttt{addr}) y escritura síncrona.
-  Almacena los operandos y variables de cada algoritmo ($i$, $s$, $X$, $Y$,
-  $P$, etc.).
+  lectura combinacional doble (\texttt{addr} y \texttt{addr\_b}) y escritura
+  síncrona en \texttt{addr}. Almacena los operandos y variables de cada
+  algoritmo ($i$, $s$, $X$, $Y$, $P$, etc.).
   \item \textbf{mux\_superior.vhd}. Multiplexor de 8 bits con \texttt{sel\_sup}
-  de 2 bits que elige entre \texttt{ext1}, \texttt{ext2}, \texttt{rf\_out} y
-  \texttt{sh\_out}. Determina la fuente que entra al acumulador.
+  de 2 bits que elige entre \texttt{ext1}, \texttt{ext2}, \texttt{rf\_a} y
+  \texttt{rf\_b}. Determina la fuente (\texttt{fuente}) que entra a la ALU o
+  que se copia directamente al banco.
   \item \textbf{mux\_inferior.vhd}. Multiplexor de 8 bits que elige entre la
-  salida de la ALU y la salida del acumulador (\texttt{sel\_inf}).
+  salida de la ALU y la vía directa \texttt{fuente} (\texttt{sel\_inf}).
   \item \textbf{shifter.vhd}. Desplazador lógico/aritmético de 8 bits
   (\texttt{sh}: \texttt{00} pasar, \texttt{01} izq.\ lógico, \texttt{10} der.\
   lógico, \texttt{11} der.\ aritmético).
@@ -191,24 +197,24 @@ IEEE~1164~\cite{ieee1164} y del lenguaje IEEE~1076-2008~\cite{ieee1076}.
 
 \subsection{Top estructural}
 
-\texttt{top\_datapath.vhd} (entidad \texttt{datapath}) instancia los ocho
-módulos y los interconecta con señales internas (\texttt{bus\_acc},
-\texttt{rf\_out}, \texttt{alu\_out}, \texttt{mux\_inf}, \texttt{sh\_out},
-\texttt{mux\_sup}). El camino crítico del diseño es
-\texttt{acumulador}$\rightarrow$ALU$\rightarrow$mux inferior$\rightarrow$
-shifter$\rightarrow$mux superior$\rightarrow$acumulador, que se resuelve en un
-ciclo de reloj por microinstrucción. La señal \texttt{cero} se calcula sobre
-la salida del shifter, es decir, sobre el valor que se escribirá en el
-acumulador en el siguiente flanco, lo que permite al control decidir el salto
-sin un ciclo extra.
+\texttt{top\_datapath.vhd} (entidad \texttt{datapath}) instancia los siete
+módulos y los interconecta con señales internas (\texttt{fuente},
+\texttt{rf\_a}, \texttt{rf\_b}, \texttt{alu\_out}, \texttt{mux\_inf},
+\texttt{sh\_out}). El camino crítico del diseño es
+banco$\rightarrow$mux superior$\rightarrow$ALU$\rightarrow$mux inferior$
+\rightarrow$shifter$\rightarrow$banco, que se resuelve en un ciclo de reloj
+por microinstrucción. La señal \texttt{cero} se calcula sobre la salida del
+shifter, es decir, sobre el valor que se escribirá en el banco en el
+siguiente flanco, lo que permite al control decidir el salto sin un ciclo
+extra.
 
 \subsection{Unidad de control con microcódigo}
 
 La estrategia escogida es \emph{control por microprograma}: una FSM sencilla
 recorre una ROM de 128 microinstrucciones. Cada microinstrucción es un
 \emph{registro} VHDL que contiene la palabra de control
-(\texttt{sel\_sup}, \texttt{wr\_acc}, \texttt{clr\_acc}, \texttt{addr},
-\texttt{wr\_rf}, \texttt{op\_alu}, \texttt{sel\_inf}, \texttt{sh},
+(\texttt{sel\_sup}, \texttt{addr}, \texttt{addr\_b}, \texttt{wr\_rf},
+\texttt{op\_alu}, \texttt{sel\_inf}, \texttt{sh},
 \texttt{out\_en}) y el control de secuencia (\texttt{salta},
 \texttt{salto\_si\_cero}, \texttt{dir}, \texttt{fin}). La dirección absoluta
 se calcula como \texttt{paso} $= \mathrm{modo}\times 32 + \mathrm{micropaso}$,
@@ -224,7 +230,7 @@ de modo que cada algoritmo ocupa un bloque de 32 entradas:
   fact \cdot i$ (mediante un bucle interno de suma repetida) e incrementa
   $i$ hasta completar $n-1$ productos.
   \item \textbf{Modo 10 --- multiplicación} $A\times B$. Se cargan $A$ en
-  $R3$ y $B$ en $R4$; el bucle suma $A$ a un acumulador $P$ un total de $B$
+  $R3$ y $B$ en $R4$; el bucle suma $A$ al registro $P$ un total de $B$
   veces mediante el contador $B$. El resultado es $P$.
 \end{itemize}
 
@@ -239,8 +245,10 @@ clásico del diseño de control microprogramado.
 El banco de registros de 8 posiciones evita usar registros dedicados para
 cada variable y acerca el diseño a un procesador real, donde los operandos
 viven en un archivo de registros direccionable. La lectura es combinacional y
-la escritura síncrona, de modo que una microinstrucción puede leer un registro
-y, en el mismo ciclo, escribir en el acumulador. Los bucles de los tres
+doble (\texttt{addr} y \texttt{addr\_b}), y la escritura síncrona, de modo que
+una microinstrucción puede leer dos registros distintos y, en el mismo ciclo,
+escribir el resultado de la ALU o de la vía directa en el banco. Los bucles de
+los tres
 algoritmos se construyen con dos recursos: el detector de cero (que aporta la
 condición de terminación) y la operación $A-1$ de la ALU (que decrementa el
 contador). Esta combinación de \emph{recursos compartidos} para múltiples
@@ -297,8 +305,8 @@ síntesis, en coherencia con el objetivo del curso.
 
 \subsection{Bancos de prueba}
 
-Se construyeron 13 testbenches autochequeados: uno por cada módulo de
-\texttt{src/} (ALU, acumulador, banco de registros, multiplexores, shifter,
+Se construyeron 12 testbenches autochequeados: uno por cada módulo de
+\texttt{src/} (ALU, banco de registros, multiplexores, shifter,
 detector de cero y buffer de salida), uno para el \emph{top} integrado, uno
 para la unidad de control y tres de extremo a extremo, llamados
 \texttt{tb\_exp1\_suma}, \texttt{tb\_exp2\_factorial} y
@@ -334,11 +342,12 @@ banco de pruebas de la ALU con \texttt{a=05h} y \texttt{b=03h}:
 resultado de cada operación. Las Figuras~\ref{fig:exp1}--\ref{fig:exp3}
 presentan los tres experimentos de extremo a extremo; en todas aparecen el
 reloj, el reinicio, la entrada \texttt{ext1}, el código de microinstrucción
-\texttt{paso}, el contador de \texttt{ciclos}, las salidas \texttt{acc\_q} y
+\texttt{paso}, el contador de \texttt{ciclos}, la lectura \texttt{rf\_dout}
+del banco (que destapa los parciales), la bandera \texttt{cero}, la salida
 \texttt{dato\_out} y la bandera \texttt{fin}. Durante cada experimento
 \texttt{paso} recorre los microciclos del bucle de suma repetida,
-\texttt{acc\_q} acumula los parciales y, al activarse \texttt{fin},
-\texttt{dato\_out} presenta el resultado.
+\texttt{rf\_dout} muestra los parciales que se escriben en el banco y, al
+activarse \texttt{fin}, \texttt{dato\_out} presenta el resultado.
 
 \begin{figure}[t]
   \centering
@@ -351,7 +360,7 @@ reloj, el reinicio, la entrada \texttt{ext1}, el código de microinstrucción
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.98\textwidth]{figuras/captura_exp1_suma.png}
-  \caption{Experimento 1 (sumatoria $S(n)$): el acumulador alcanza
+  \caption{Experimento 1 (sumatoria $S(n)$): \texttt{dato\_out} destapa
   \texttt{0x0F}$=15$ y la FSM se detiene con \texttt{fin}$=1$.}
   \label{fig:exp1}
 \end{figure}
@@ -359,8 +368,10 @@ reloj, el reinicio, la entrada \texttt{ext1}, el código de microinstrucción
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.98\textwidth]{figuras/captura_exp2_factorial.png}
-  \caption{Experimento 2 (factorial): $5!=120$ en el acumulador; el bucle
-  externo usa el bucle interno de suma repetida.}
+  \caption{Experimento 2 (factorial): corridas de $1!$ y $3!$;
+  \texttt{dato\_out} destapa \texttt{01h}$=1$ y \texttt{06h}$=6$ al cerrar
+  cada \texttt{fin}, con el bucle externo usando el bucle interno de suma
+  repetida.}
   \label{fig:exp2}
 \end{figure}
 
@@ -375,15 +386,16 @@ reloj, el reinicio, la entrada \texttt{ext1}, el código de microinstrucción
 
 La Figura~\ref{fig:datapath} recoge una simulación del \emph{top} integrado
 gobernada paso a paso desde el banco de pruebas, donde se aprecia la
-secuencia de micro-operaciones internas (\texttt{bus\_acc},
-\texttt{rf\_dout}, \texttt{cero}) junto a las señales de control
-\texttt{wr\_acc}, \texttt{clr\_acc} y \texttt{wr\_rf}.
+secuencia de micro-operaciones internas (\texttt{sel\_sup}, \texttt{addr},
+\texttt{addr\_b}, \texttt{op\_alu}, \texttt{rf\_dout}, \texttt{cero})
+junto a las señales de control \texttt{wr\_rf}, \texttt{sel\_inf} y
+\texttt{out\_en}.
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.98\textwidth]{figuras/captura_datapath.png}
-  \caption{Simulación del datapath integrado: micro-operaciones internas y
-  encadenamiento acumulador--ALU--shifter--banco.}
+  \caption{Simulación del datapath integrado: micro-operaciones del banco y
+  encadenamiento mux--ALU--shifter--banco.}
   \label{fig:datapath}
 \end{figure}
 
@@ -414,7 +426,7 @@ con el valor esperado y ningún testbench emitió fallo.
     Sumatoria $S(n)$   & $n=3$ & 6   & ---\\
     Sumatoria $S(n)$   & $n=5$ & 15  & ---\\
     Factorial $n!$     & $n=1$ & 1   & ---\\
-    Factorial $n!$     & $n=5$ & 120 & 147\\
+    Factorial $n!$     & $n=5$ & 120 & 71\\
     Multiplicación     & $4\times3$   & 12  & ---\\
     Multiplicación     & $5\times5$   & 25  & ---\\
     Multiplicación     & $15\times15$ & 225 & ---\\
@@ -431,8 +443,8 @@ suma, devolviendo 0.
 
 \subsection{Verificación de los módulos base}
 
-Los 13 testbenches (10 de módulos y control, 3 de extremo a extremo)
-finalizaron con 13 \texttt{OK} y 0 \texttt{FAIL}. Este resultado tiene dos
+Los 12 testbenches (9 de módulos, \emph{top} y control, 3 de extremo a extremo)
+finalizaron con 12 \texttt{OK} y 0 \texttt{FAIL}. Este resultado tiene dos
 lecturas. Por un lado, valida cada recurso de forma aislada: por ejemplo, la
 ALU produce correctamente las ocho funciones y el shifter aplica los cuatro
 modos de desplazamiento. Por otro, la prueba de integración confirma que el
@@ -443,7 +455,7 @@ ofrece una confianza razonable para un diseño didáctico~\cite{kern1999}.
 
 \subsection{Análisis del consumo de microciclos}
 
-El caso $5!$ consumió 147 microciclos, coherente con su estructura de dos
+El caso $5!$ consumió 71 microciclos, coherente con su estructura de dos
 bucles anidados: el bucle externo recorre $i=2..5$ (cuatro productos) y cada
 producto ejecuta un bucle interno de suma repetida. La multiplicación
 $A\times B$ consume microciclos proporcionales a $B$, pues el bucle interno
@@ -490,7 +502,7 @@ Se diseñó, implementó y verificó en VHDL-2008 un datapath de 8 bits capaz de
 ejecutar tres algoritmos (sumatoria, factorial y multiplicación) mediante una
 unidad de control microprogramada. El diseño cumple los objetivos planteados:
 cada recurso es una entidad independiente, el \emph{top} estructural los
-integra y los 13 testbenches autochequeados pasan sin fallo, con resultados
+integra y los 12 testbenches autochequeados pasan sin fallo, con resultados
 correctos ($S(5)=15$, $5!=120$, $15\times15=225$). La reutilización de la ALU
 y el banco de registros para los tres algoritmos demuestra el principio de
 diseño de recursos compartidos que caracteriza a los datapaths reales.
@@ -524,18 +536,14 @@ y~\ref{sec:resultados}.
 \lstinputlisting[caption={alu.vhd --- unidad aritmético-lógica de 8 bits},
 label=lst:alu]{../../vhdl/datapath-2/src/alu.vhd}
 
-\subsection{Acumulador}
-\lstinputlisting[caption={acumulador.vhd --- registro-bus con clear},
-label=lst:acc]{../../vhdl/datapath-2/src/acumulador.vhd}
-
 \subsection{Banco de registros}
 \lstinputlisting[caption={banco\_registros.vhd --- 8 registros de 8 bits},
 label=lst:rf]{../../vhdl/datapath-2/src/banco_registros.vhd}
 
 \subsection{Multiplexores}
-\lstinputlisting[caption={mux\_superior.vhd --- selección de fuente al acumulador},
+\lstinputlisting[caption={mux\_superior.vhd --- selección de la fuente de entrada},
 label=lst:muxsup]{../../vhdl/datapath-2/src/mux_superior.vhd}
-\lstinputlisting[caption={mux\_inferior.vhd --- ALU o acumulador},
+\lstinputlisting[caption={mux\_inferior.vhd --- ALU o vía directa},
 label=lst:muxinf]{../../vhdl/datapath-2/src/mux_inferior.vhd}
 
 \subsection{Shifter y detector de cero}

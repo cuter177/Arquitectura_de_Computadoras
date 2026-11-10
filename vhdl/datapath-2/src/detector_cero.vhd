@@ -5,9 +5,10 @@
 -- Es el flag de condición que permite terminar los bucles de los
 -- tres experimentos (suma, factorial y multiplicación). No aparece
 -- en el diagrama oficial; se añade con justificación (ver
--- docs/plan-datapath-3.md, §4.4) sobre el valor que se va a escribir
--- en el acumulador, de modo que el salto condicional puede ir en la
--- misma microinstrucción que produce el resultado.
+-- docs/plan-datapath-3.md, §4.4) sobre el valor que se va a
+-- escribir en el banco en el siguiente flanco, de modo que el salto
+-- condicional puede ir en la misma microinstrucción que produce el
+-- resultado.
 -- ============================================================
 library ieee;
 use ieee.std_logic_1164.all;

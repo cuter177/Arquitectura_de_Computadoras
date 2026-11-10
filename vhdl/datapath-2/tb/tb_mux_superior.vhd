@@ -1,7 +1,7 @@
 -- ============================================================
 -- tb_mux_superior.vhd — Banco de prueba del mux superior
 --
--- Comprueba los 4 códigos de selección.
+-- Comprueba los 4 códigos de selección (ext1, ext2, rf_a, rf_b).
 -- ============================================================
 library ieee;
 use ieee.std_logic_1164.all;
@@ -14,13 +14,13 @@ end entity;
 architecture tb of tb_mux_superior is
   signal ext1    : unsigned(7 downto 0) := to_unsigned(10, 8);
   signal ext2    : unsigned(7 downto 0) := to_unsigned(20, 8);
-  signal rf_out  : unsigned(7 downto 0) := to_unsigned(30, 8);
-  signal sh_out  : unsigned(7 downto 0) := to_unsigned(40, 8);
+  signal rf_a    : unsigned(7 downto 0) := to_unsigned(30, 8);
+  signal rf_b    : unsigned(7 downto 0) := to_unsigned(40, 8);
   signal sel_sup : unsigned(1 downto 0) := "00";
   signal dout    : unsigned(7 downto 0);
 begin
   dut : entity work.mux_superior
-    port map (ext1 => ext1, ext2 => ext2, rf_out => rf_out, sh_out => sh_out,
+    port map (ext1 => ext1, ext2 => ext2, rf_a => rf_a, rf_b => rf_b,
               sel_sup => sel_sup, dout => dout);
 
   process
@@ -38,8 +38,8 @@ begin
   begin
     probar("00", to_unsigned(10, 8));  -- ext1
     probar("01", to_unsigned(20, 8));  -- ext2
-    probar("10", to_unsigned(30, 8));  -- rf_out
-    probar("11", to_unsigned(40, 8));  -- sh_out
+    probar("10", to_unsigned(30, 8));  -- rf_a
+    probar("11", to_unsigned(40, 8));  -- rf_b
 
     report "tb_mux_superior: OK - los 4 códigos verificados";
     finish;

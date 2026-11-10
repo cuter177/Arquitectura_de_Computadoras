@@ -3,10 +3,11 @@
 --
 -- Verifica el secuenciamiento de la FSM (sin datapath):
 --   * tras el reinicio, 'paso' salta a la base del modo (modo*32);
---   * la secuencia de la suma (modo 00) avanza 0,1,2,... y en el
---     paso 9 salta al 4 (bucle);
+--   * la secuencia de la suma (modo 00) avanza por los pasos 1,2,
+--     3,4,5 y el bucle queda en el rango 3..5;
 --   * con cero = 0 el bucle no termina (no se activa 'fin');
---   * forzando cero = 1 en el paso 8, salta al 10 y activa 'fin'.
+--   * forzando cero = 1, el paso 4 (R1 <- R1 - 1) salta al 6,
+--     que tiene fin = 1, y la FSM se detiene.
 -- 'ciclos' cuenta los microciclos ejecutados.
 -- ============================================================
 library ieee;
@@ -25,9 +26,8 @@ architecture tb of tb_control is
   signal modo    : unsigned(1 downto 0) := "00";
   signal cero    : std_logic := '0';
   signal sel_sup : unsigned(1 downto 0);
-  signal wr_acc  : std_logic;
-  signal clr_acc : std_logic;
   signal addr    : unsigned(2 downto 0);
+  signal addr_b  : unsigned(2 downto 0);
   signal wr_rf   : std_logic;
   signal op_alu  : unsigned(2 downto 0);
   signal sel_inf : std_logic;
@@ -42,7 +42,7 @@ begin
   dut : entity work.control
     port map (
       clk => clk, rst => rst, modo => modo, cero => cero,
-      sel_sup => sel_sup, wr_acc => wr_acc, clr_acc => clr_acc, addr => addr,
+      sel_sup => sel_sup, addr => addr, addr_b => addr_b,
       wr_rf => wr_rf, op_alu => op_alu, sel_inf => sel_inf, sh => sh,
       out_en => out_en, paso => paso, ciclos => ciclos, fin => fin);
 
@@ -63,18 +63,19 @@ begin
     assert paso = to_unsigned(0, 7)
       report "La base del modo 00 debe ser el paso 0" severity failure;
 
-    -- Con cero = 0: la secuencia avanza y en el paso 9 salta al 4
+    -- Con cero = 0: la secuencia avanza por 1,2,3,4,5 y el bucle
+    -- de acumulación (R2 <- R2+R1 / R1 <- R1-1 / salta) queda en 3..5
     for i in 0 to 40 loop
       wait until rising_edge(clk);
     end loop;
     wait for 1 ns;
     assert fin = '0'
       report "Con cero=0 el bucle de la suma no debe terminar" severity failure;
-    -- El paso debe seguir dentro del rango del bucle (4..10)
-    assert paso >= 4 and paso <= 10
-      report "El paso debe permanecer en el bucle de la suma" severity failure;
+    assert paso >= 3 and paso <= 5
+      report "El paso debe permanecer en el bucle de la suma (3..5)"
+      severity failure;
 
-    -- Forzando cero = 1 desde el arranque: en el paso 8 salta al 10,
+    -- Forzando cero = 1 desde el arranque: en el paso 4 salta al 6,
     -- que tiene fin = 1, y la FSM debe detenerse.
     modo <= "00";
     cero <= '1';
@@ -86,8 +87,15 @@ begin
     wait for 1 ns;
     cero <= '0';
     assert fin = '1'
-      report "Con cero=1 la suma debe saltar al paso 10 y activar 'fin'"
+      report "Con cero=1 la suma debe saltar al paso 6 y activar 'fin'"
       severity failure;
+
+    -- Base del modo 01 (factorial) = 32
+    modo <= "01";
+    reiniciar;
+    wait for 1 ns;
+    assert paso = to_unsigned(32, 7)
+      report "La base del modo 01 debe ser el paso 32" severity failure;
 
     -- Base del modo 10 (multiplicación) = 64
     modo <= "10";

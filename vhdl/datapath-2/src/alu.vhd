@@ -14,8 +14,8 @@ use ieee.numeric_std.all;
 
 entity alu is
   port (
-    a      : in  unsigned(7 downto 0);   -- operando A (acumulador)
-    b      : in  unsigned(7 downto 0);   -- operando B (banco de registros)
+    a      : in  unsigned(7 downto 0);   -- operando A (salida del mux superior)
+    b      : in  unsigned(7 downto 0);   -- operando B (lectura B del banco)
     op_alu : in  unsigned(2 downto 0);   -- selector de operación A2 A1 A0
     f      : out unsigned(7 downto 0)    -- resultado
   );
