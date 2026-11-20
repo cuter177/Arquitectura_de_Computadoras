@@ -1,0 +1,6 @@
+QUARTUS_VERSION = "25.1"
+DATE = "12:00:00  November 17, 2026"
+
+# Revisions
+
+PROJECT_REVISION = "top_placa"
