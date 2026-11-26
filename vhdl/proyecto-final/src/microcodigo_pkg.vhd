@@ -131,7 +131,7 @@ package body microcodigo_pkg is
         7  => mk(clr_acc => '1'),                                    -- Acc <- 0
         8  => mk(wr_rf => '1', addr => "011"),                       -- R3 <- P = 0
         9  => mk(wr_acc => '1', sel_sup => "10", addr => "010"),     -- Acc <- B
-        10 => mk(wr_acc => '1', sel_sup => "11", op_alu => "101",
+        10 => mk(wr_acc => '1', sel_sup => "11", op_alu => "110",
                  addr => "000", salto_si_cero => '1', dir_cero => 14),-- B & 1; si 0 -> 14
         11 => mk(wr_acc => '1', sel_sup => "10", addr => "011"),     -- Acc <- P
         12 => mk(wr_acc => '1', sel_sup => "11", op_alu => "001",
@@ -159,7 +159,7 @@ package body microcodigo_pkg is
         37 => mk(clr_acc => '1'),
         38 => mk(wr_rf => '1', addr => "011"),                       -- R3 <- conteo = 0
         39 => mk(wr_acc => '1', sel_sup => "10", addr => "001"),     -- Acc <- x
-        40 => mk(wr_acc => '1', sel_sup => "11", op_alu => "101",
+        40 => mk(wr_acc => '1', sel_sup => "11", op_alu => "110",
                  addr => "000", salto_si_cero => '1', dir_cero => 44),-- x & 1; si 0 -> 44
         41 => mk(wr_acc => '1', sel_sup => "10", addr => "011"),     -- Acc <- conteo
         42 => mk(wr_acc => '1', sel_sup => "11", op_alu => "011"),   -- Acc <- conteo + 1
