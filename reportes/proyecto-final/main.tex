@@ -68,7 +68,7 @@ FPGA, Motor paso a paso.
 La separación entre camino de datos y unidad de control es uno de los pilares
 de la organización de computadoras: el primero ejecuta las microoperaciones y
 la segunda determina \emph{qué} microoperación se ejecuta en cada ciclo
-~\cite{stallings2016,patterson2017}. En trabajos previos de esta misma unidad se
+~\cite{stallings2016,patterson2017,patterson2021}. En trabajos previos de esta misma unidad se
 implementó el Datapath 3 de la asignatura de forma estructural, con una FSM cuyo
 programa era una ROM de microinstrucciones escrita explícitamente para cuatro
 algoritmos. El proyecto final plantea dar un paso más: mantener ese modelo de
@@ -105,7 +105,7 @@ datapath original y es la que se conserva aquí. La diferencia es que la tabla
 ya no está escrita dentro de la entidad del control: reside en
 \texttt{microcodigo\_pkg.vhd} y se pasa al entity mediante un
 \texttt{generic} de tipo arreglo de registros, una construcción admitida por
-VHDL-2008 ~\cite{ieee1076-2019,ashenden2008}. En consecuencia, el mismo
+VHDL-2008 ~\cite{ieee1076-2008,ieee1076-2019,ashenden2008}. En consecuencia, el mismo
 \texttt{control\_gen} puede gobernar cualquier máquina que entienda su palabra
 de control; basta con proporcionar otra ROM.
 
