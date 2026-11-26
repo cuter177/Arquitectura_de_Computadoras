@@ -40,8 +40,11 @@ if ! command -v ghdl >/dev/null 2>&1; then
     exit 1
 fi
 
-# Recoger fuentes: src/ primero (dependencias), luego tb/
-mapfile -t FUENTES < <(find "$DIR/src" \( -name '*.vhd' -o -name '*.vhdl' \) 2>/dev/null | sort)
+# Recoger fuentes: src/ primero (dependencias), luego tb/.
+# Los paquetes (*_pkg.vhd) van antes que el resto: GHDL necesita
+# analizar un package antes de la entidad que lo usa (VHDL-2008).
+mapfile -t FUENTES < <(find "$DIR/src" \( -name '*.vhd' -o -name '*.vhdl' \) 2>/dev/null \
+    | awk '{ print ($0 ~ /_pkg\.vhd$/) ? "0" $0 : "1" $0 }' | sort | sed 's/^[01]//')
 mapfile -t TESTBENCHES < <(find "$DIR/tb" \( -name '*.vhd' -o -name '*.vhdl' \) 2>/dev/null | sort)
 
 # Módulos comunes de la placa DE10-Standard: se analizan antes que el diseño
