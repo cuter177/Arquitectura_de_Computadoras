@@ -42,7 +42,9 @@ mkdir -p "$WORK" "$SALIDAS"
 
 # 1) Analizar fuentes y testbenches
 echo "=== [$UNIDAD] Análisis (VHDL-2008) ==="
-mapfile -t FUENTES < <(find "$DIR/src" \( -name '*.vhd' -o -name '*.vhdl' \) 2>/dev/null | sort)
+# Los paquetes (*_pkg.vhd) se analizan antes que los entities que los usan.
+mapfile -t FUENTES < <(find "$DIR/src" \( -name '*.vhd' -o -name '*.vhdl' \) 2>/dev/null \
+    | awk '{ print ($0 ~ /_pkg\.vhd$/) ? "0" $0 : "1" $0 }' | sort | sed 's/^[01]//')
 mapfile -t TESTBENCHES < <(find "$DIR/tb" \( -name '*.vhd' -o -name '*.vhdl' \) 2>/dev/null | sort)
 
 # Módulos comunes de la placa y envoltorios de la unidad (si existen)
