@@ -1,0 +1,222 @@
+# ============================================================
+# Proyecto Quartus Prime del proyecto final para la DE10-Standard
+#
+#   Abrir:      doble clic en top_placa.qpf
+#   Compilar:   Processing -> Start Compilation  (Ctrl+L)
+#   Verificar:  output_files/top_placa.sof (sin programar la placa)
+#
+# Dispositivo: 5CSXFC6D6F31C6 (Cyclone V SoC de la DE10-Standard;
+# la «N» del pedido 5CSXFC6D6F31C6N es el sufijo libre de plomo).
+#
+# Pines: DE10-Standard User Manual (Terasic, 20-mar-2018),
+# Tablas 3-5 (relojes), 3-6 (SW), 3-7 (KEY), 3-8 (LEDR), 3-9 (HEX) y 3-11 (GPIO).
+# La tabla equivalente en texto está en vhdl/fpga-de10/README.md.
+# ============================================================
+
+# ------------------------------------------------------------
+# Dispositivo y flujo
+# ------------------------------------------------------------
+set_global_assignment -name FAMILY "Cyclone V"
+set_global_assignment -name DEVICE 5CSXFC6D6F31C6
+set_global_assignment -name TOP_LEVEL_ENTITY top_placa
+set_global_assignment -name ORIGINAL_QUARTUS_VERSION 25.1
+set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
+set_global_assignment -name MIN_CORE_JUNCTION_TEMP 0
+set_global_assignment -name MAX_CORE_JUNCTION_TEMP 85
+set_global_assignment -name ERROR_CHECK_FREQUENCY_DIVISOR 1
+set_global_assignment -name NOMINAL_CORE_SUPPLY_VOLTAGE 1.1V
+set_global_assignment -name VHDL_INPUT_VERSION VHDL_2008
+set_global_assignment -name RESERVE_ALL_UNUSED_PINS "AS INPUT TRI-STATED"
+
+# ------------------------------------------------------------
+# Fuentes VHDL (los testbenches no se sintetizan)
+# ------------------------------------------------------------
+set_global_assignment -name VHDL_FILE ../../fpga-de10/src/divisor.vhd
+set_global_assignment -name VHDL_FILE ../../fpga-de10/src/pulsador.vhd
+set_global_assignment -name VHDL_FILE ../../fpga-de10/src/hex7seg.vhd
+set_global_assignment -name VHDL_FILE ../src/microcodigo_pkg.vhd
+set_global_assignment -name VHDL_FILE ../src/control_gen.vhd
+set_global_assignment -name VHDL_FILE ../src/datapath3_rtl.vhd
+set_global_assignment -name VHDL_FILE ../src/motor_pasos.vhd
+set_global_assignment -name VHDL_FILE top_placa.vhd
+set_global_assignment -name SDC_FILE top_placa.sdc
+
+# ------------------------------------------------------------
+# Asignación de pines
+# ------------------------------------------------------------
+
+# ------------------------------------------------------------
+# GPIO_0 -> driver del motor NEMA 17 (Tabla 3-11 del manual)
+#   GPIO_0[0] STEP, GPIO_0[1] DIR, GPIO_0[2] EN,
+#   GPIO_0[3..5] MS1/MS2/MS3 (paso completo = 000)
+# ------------------------------------------------------------
+set_location_assignment PIN_W15 -to step_out
+set_location_assignment PIN_AK2 -to dir_out
+set_location_assignment PIN_Y16 -to en_out
+set_location_assignment PIN_AK3 -to ms_out[0]
+set_location_assignment PIN_AJ1 -to ms_out[1]
+set_location_assignment PIN_AJ2 -to ms_out[2]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to step_out
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to dir_out
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to en_out
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to ms_out[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to ms_out[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to ms_out[2]
+
+# Reloj
+set_location_assignment PIN_AF14 -to clk
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to clk
+
+# Pulsadores KEY[3..0] (activos a nivel bajo): KEY0 ejecutar/capturar, KEY1/2 sin uso, KEY3 reset
+set_location_assignment PIN_AJ4 -to key[0]
+set_location_assignment PIN_AK4 -to key[1]
+set_location_assignment PIN_AA14 -to key[2]
+set_location_assignment PIN_AA15 -to key[3]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to key[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to key[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to key[2]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to key[3]
+
+# Interruptores SW[9..0]: SW[9:8] modo, SW[7:0] operando
+set_location_assignment PIN_AB30 -to sw[0]
+set_location_assignment PIN_Y27 -to sw[1]
+set_location_assignment PIN_AB28 -to sw[2]
+set_location_assignment PIN_AC30 -to sw[3]
+set_location_assignment PIN_W25 -to sw[4]
+set_location_assignment PIN_V25 -to sw[5]
+set_location_assignment PIN_AC28 -to sw[6]
+set_location_assignment PIN_AD30 -to sw[7]
+set_location_assignment PIN_AC29 -to sw[8]
+set_location_assignment PIN_AA30 -to sw[9]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to sw[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to sw[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to sw[2]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to sw[3]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to sw[4]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to sw[5]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to sw[6]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to sw[7]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to sw[8]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to sw[9]
+
+# LEDs LEDR: 1..0 modo, 3..2 estado, 4 cero, 5 fin, 6 ocupado, 7 espera B, 8 out_en, 9 apagado
+set_location_assignment PIN_AA24 -to ledr[0]
+set_location_assignment PIN_AB23 -to ledr[1]
+set_location_assignment PIN_AC23 -to ledr[2]
+set_location_assignment PIN_AD24 -to ledr[3]
+set_location_assignment PIN_AG25 -to ledr[4]
+set_location_assignment PIN_AF25 -to ledr[5]
+set_location_assignment PIN_AE24 -to ledr[6]
+set_location_assignment PIN_AF24 -to ledr[7]
+set_location_assignment PIN_AB22 -to ledr[8]
+set_location_assignment PIN_AC22 -to ledr[9]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to ledr[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to ledr[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to ledr[2]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to ledr[3]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to ledr[4]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to ledr[5]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to ledr[6]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to ledr[7]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to ledr[8]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to ledr[9]
+
+# Displays: HEX5:4 operando A/n, HEX3:2 operando B, HEX1:0 resultado (ánodo común, hex7seg activo a nivel bajo)
+set_location_assignment PIN_W17 -to hex0[0]
+set_location_assignment PIN_V18 -to hex0[1]
+set_location_assignment PIN_AG17 -to hex0[2]
+set_location_assignment PIN_AG16 -to hex0[3]
+set_location_assignment PIN_AH17 -to hex0[4]
+set_location_assignment PIN_AG18 -to hex0[5]
+set_location_assignment PIN_AH18 -to hex0[6]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to hex0[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to hex0[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to hex0[2]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to hex0[3]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to hex0[4]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to hex0[5]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to hex0[6]
+
+# hex1
+set_location_assignment PIN_AF16 -to hex1[0]
+set_location_assignment PIN_V16 -to hex1[1]
+set_location_assignment PIN_AE16 -to hex1[2]
+set_location_assignment PIN_AD17 -to hex1[3]
+set_location_assignment PIN_AE18 -to hex1[4]
+set_location_assignment PIN_AE17 -to hex1[5]
+set_location_assignment PIN_V17 -to hex1[6]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to hex1[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to hex1[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to hex1[2]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to hex1[3]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to hex1[4]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to hex1[5]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to hex1[6]
+
+# hex2
+set_location_assignment PIN_AA21 -to hex2[0]
+set_location_assignment PIN_AB17 -to hex2[1]
+set_location_assignment PIN_AA18 -to hex2[2]
+set_location_assignment PIN_Y17 -to hex2[3]
+set_location_assignment PIN_Y18 -to hex2[4]
+set_location_assignment PIN_AF18 -to hex2[5]
+set_location_assignment PIN_W16 -to hex2[6]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to hex2[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to hex2[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to hex2[2]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to hex2[3]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to hex2[4]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to hex2[5]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to hex2[6]
+
+# hex3
+set_location_assignment PIN_Y19 -to hex3[0]
+set_location_assignment PIN_W19 -to hex3[1]
+set_location_assignment PIN_AD19 -to hex3[2]
+set_location_assignment PIN_AA20 -to hex3[3]
+set_location_assignment PIN_AC20 -to hex3[4]
+set_location_assignment PIN_AA19 -to hex3[5]
+set_location_assignment PIN_AD20 -to hex3[6]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to hex3[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to hex3[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to hex3[2]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to hex3[3]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to hex3[4]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to hex3[5]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to hex3[6]
+
+# hex4
+set_location_assignment PIN_AD21 -to hex4[0]
+set_location_assignment PIN_AG22 -to hex4[1]
+set_location_assignment PIN_AE22 -to hex4[2]
+set_location_assignment PIN_AE23 -to hex4[3]
+set_location_assignment PIN_AG23 -to hex4[4]
+set_location_assignment PIN_AF23 -to hex4[5]
+set_location_assignment PIN_AH22 -to hex4[6]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to hex4[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to hex4[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to hex4[2]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to hex4[3]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to hex4[4]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to hex4[5]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to hex4[6]
+
+# hex5
+set_location_assignment PIN_AF21 -to hex5[0]
+set_location_assignment PIN_AG21 -to hex5[1]
+set_location_assignment PIN_AF20 -to hex5[2]
+set_location_assignment PIN_AG20 -to hex5[3]
+set_location_assignment PIN_AE19 -to hex5[4]
+set_location_assignment PIN_AF19 -to hex5[5]
+set_location_assignment PIN_AB21 -to hex5[6]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to hex5[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to hex5[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to hex5[2]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to hex5[3]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to hex5[4]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to hex5[5]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to hex5[6]
+
+
+set_global_assignment -name LAST_QUARTUS_VERSION "25.1std.0 Lite Edition"
+set_global_assignment -name RESERVE_ALL_UNUSED_PINS_NO_OUTPUT_GND "AS INPUT TRI-STATED"
